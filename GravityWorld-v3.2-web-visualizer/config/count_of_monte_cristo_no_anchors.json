@@ -1,0 +1,148 @@
+{
+  "version": "3.2",
+  "name": "Count_of_Monte_Cristo_no_anchors",
+  "description": "基督山伯爵 - 纯势力场与角色相互作用（无预设锚点）",
+  "meta_rules": {
+    "G": 0.5,
+    "gamma": 2.0,
+    "dt": 0.01,
+    "dim_weights": [1.0, 1.0, 1.0, 1.0],
+    "distance_power": 2.0,
+    "distance_scale": 1.5,
+    "min_distance": 0.2,
+    "factor_mass_coeff": 5.0,
+    "constants": ["复仇", "宽恕", "命运"]
+  },
+  "gravity_factors": [
+    {
+      "name": "基督山",
+      "mass": 0.95,
+      "field_type": "constant",
+      "field_params": {
+        "vector": [0.9, 0.8, 0.9, 0.9]
+      }
+    },
+    {
+      "name": "巴黎贵族",
+      "mass": 0.9,
+      "field_type": "constant",
+      "field_params": {
+        "vector": [-0.9, -0.7, -0.8, -0.9]
+      }
+    },
+    {
+      "name": "法律司法",
+      "mass": 0.85,
+      "field_type": "constant",
+      "field_params": {
+        "vector": [-0.9, -0.3, -0.5, -0.8]
+      }
+    },
+    {
+      "name": "金钱银行",
+      "mass": 0.8,
+      "field_type": "constant",
+      "field_params": {
+        "vector": [-0.3, 0.8, -0.9, -0.5]
+      }
+    },
+    {
+      "name": "宗教信仰",
+      "mass": 0.75,
+      "field_type": "constant",
+      "field_params": {
+        "vector": [-0.8, -0.8, 0.8, -0.9]
+      }
+    },
+    {
+      "name": "海黛爱情",
+      "mass": 0.7,
+      "field_type": "constant",
+      "field_params": {
+        "vector": [0.8, 0.9, 0.9, 0.7]
+      }
+    },
+    {
+      "name": "死亡命运",
+      "mass": 0.85,
+      "field_type": "constant",
+      "field_params": {
+        "vector": [-0.5, -0.5, -0.9, -0.7]
+      }
+    }
+  ],
+  "characters": [
+    {
+      "name": "爱德蒙",
+      "mass": 1.0,
+      "vector": [0.5, 0.6, 0.4, 0.5],
+      "plasticity": 0.5,
+      "affiliations": {
+        "基督山": 0.9
+      }
+    },
+    {
+      "name": "费尔南",
+      "mass": 0.85,
+      "vector": [-0.6, -0.4, -0.7, -0.6],
+      "plasticity": 0.4,
+      "affiliations": {
+        "巴黎贵族": 0.85,
+        "金钱银行": 0.5
+      }
+    },
+    {
+      "name": "唐格拉尔",
+      "mass": 0.85,
+      "vector": [-0.2, 0.7, -0.8, -0.4],
+      "plasticity": 0.5,
+      "affiliations": {
+        "金钱银行": 0.9
+      }
+    },
+    {
+      "name": "维尔福",
+      "mass": 0.8,
+      "vector": [-0.7, -0.2, -0.4, -0.7],
+      "plasticity": 0.4,
+      "affiliations": {
+        "法律司法": 0.9,
+        "巴黎贵族": 0.6
+      }
+    },
+    {
+      "name": "海黛",
+      "mass": 0.85,
+      "vector": [0.7, 0.8, 0.8, 0.6],
+      "plasticity": 0.6,
+      "affiliations": {
+        "海黛爱情": 0.9
+      }
+    },
+    {
+      "name": "阿尔贝",
+      "mass": 0.75,
+      "vector": [-0.4, -0.2, 0.1, -0.3],
+      "plasticity": 0.6,
+      "affiliations": {
+        "巴黎贵族": 0.7
+      }
+    },
+    {
+      "name": "瓦朗蒂娜",
+      "mass": 0.8,
+      "vector": [0.4, 0.5, 0.6, 0.2],
+      "plasticity": 0.6,
+      "affiliations": {
+        "宗教信仰": 0.6,
+        "海黛爱情": 0.3
+      }
+    }
+  ],
+  "anchors": [],
+  "art_weights": {
+    "dramatic": 0.5,
+    "surprise": 0.5,
+    "theme": 0.5
+  }
+}

@@ -1,0 +1,281 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://worldview-gravity-lab/schema/v32.json",
+  "title": "Worldview Gravity Lab v3.2 Config Schema",
+  "description": "世界观引力实验室 v3.2 配置文件格式规范",
+
+  "type": "object",
+  "required": ["meta_rules", "gravity_factors", "characters"],
+
+  "properties": {
+    "version": {
+      "type": "string",
+      "enum": ["3.2"],
+      "description": "数据格式版本号"
+    },
+    "name": {
+      "type": "string",
+      "description": "测试案例名称"
+    },
+    "description": {
+      "type": "string",
+      "description": "测试案例说明"
+    },
+
+    "meta_rules": {
+      "type": "object",
+      "description": "元规则层：系统全局参数",
+      "required": ["G", "gamma", "dt"],
+      "properties": {
+        "G": {
+          "type": "number",
+          "minimum": 0.1,
+          "maximum": 10.0,
+          "default": 1.0,
+          "description": "引力常数，越大引力越强"
+        },
+        "gamma": {
+          "type": "number",
+          "minimum": 0.1,
+          "maximum": 10.0,
+          "default": 2.0,
+          "description": "非线性系数"
+        },
+        "dt": {
+          "type": "number",
+          "minimum": 0.001,
+          "maximum": 0.1,
+          "default": 0.01,
+          "description": "时间步长，越小越稳定"
+        },
+        "dim_weights": {
+          "type": "array",
+          "minItems": 4,
+          "maxItems": 4,
+          "items": {
+            "type": "number",
+            "minimum": 0.0,
+            "maximum": 1.0
+          },
+          "default": [1.0, 1.0, 1.0, 1.0],
+          "description": "4个维度的权重：[自由-秩序, 个体-集体, 理想-现实, 变革-保守]"
+        },
+        "distance_power": {
+          "type": "number",
+          "minimum": 1.0,
+          "maximum": 4.0,
+          "default": 2.0,
+          "description": "距离幂次，越大引力衰减越快"
+        },
+        "distance_scale": {
+          "type": "number",
+          "minimum": 0.1,
+          "maximum": 5.0,
+          "default": 1.5,
+          "description": "距离衰减尺度，越小引力作用范围越短"
+        },
+        "min_distance": {
+          "type": "number",
+          "minimum": 0.01,
+          "maximum": 1.0,
+          "default": 0.1,
+          "description": "最小距离，防除零"
+        },
+        "factor_mass_coeff": {
+          "type": "number",
+          "minimum": 0.1,
+          "maximum": 20.0,
+          "default": 5.0,
+          "description": "势力质量系数，势力在计算中的有效质量 = 配置mass × 系数，默认5.0形成层级碾压"
+        },
+        "constants": {
+          "type": "array",
+          "items": { "type": "string" },
+          "default": [],
+          "description": "元规则字符串列表（预留）"
+        }
+      }
+    },
+
+    "gravity_factors": {
+      "type": "array",
+      "description": "势力层：影响角色的外部力量",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["name", "field_params"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "势力名称"
+          },
+          "mass": {
+            "type": "number",
+            "minimum": 0.0,
+            "maximum": 1.0,
+            "default": 0.5,
+            "description": "势力质量/强度"
+          },
+          "field_type": {
+            "type": "string",
+            "enum": ["constant"],
+            "default": "constant",
+            "description": "势力类型"
+          },
+          "field_params": {
+            "type": "object",
+            "required": ["vector"],
+            "properties": {
+              "vector": {
+                "type": "array",
+                "minItems": 4,
+                "maxItems": 4,
+                "items": {
+                  "type": "number",
+                  "minimum": -1.0,
+                  "maximum": 1.0
+                },
+                "description": "势力的4D立场向量"
+              }
+            }
+          },
+          "affiliation_weights": {
+            "type": "object",
+            "default": {},
+            "description": "角色隶属权重（预留）"
+          }
+        }
+      }
+    },
+
+    "characters": {
+      "type": "array",
+      "description": "角色层：被推演的叙事实体",
+      "minItems": 2,
+      "items": {
+        "type": "object",
+        "required": ["name", "vector"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "角色名称"
+          },
+          "mass": {
+            "type": "number",
+            "minimum": 0.0,
+            "maximum": 1.0,
+            "default": 0.5,
+            "description": "角色质量/影响力"
+          },
+          "vector": {
+            "type": "array",
+            "minItems": 4,
+            "maxItems": 4,
+            "items": {
+              "type": "number",
+              "minimum": -1.0,
+              "maximum": 1.0
+            },
+            "description": "角色初始4D世界观向量"
+          },
+          "plasticity": {
+            "type": "number",
+            "minimum": 0.0,
+            "maximum": 1.0,
+            "default": 0.5,
+            "description": "可塑性：0=不变，1=极易变化"
+          },
+          "affiliations": {
+            "type": "object",
+            "default": {},
+            "description": "角色隶属关系（预留）"
+          }
+        }
+      }
+    },
+
+    "anchors": {
+      "type": "array",
+      "description": "锚点层：在指定步数触发的剧情事件",
+      "items": {
+        "type": "object",
+        "required": ["step", "name", "anchor_type", "effect"],
+        "properties": {
+          "step": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "触发步数"
+          },
+          "name": {
+            "type": "string",
+            "description": "锚点事件名称"
+          },
+          "anchor_type": {
+            "type": "string",
+            "enum": ["relation", "individual"],
+            "description": "类型：relation=关系变化, individual=个体变化"
+          },
+          "description": {
+            "type": "string",
+            "default": "",
+            "description": "事件描述"
+          },
+          "effect": {
+            "type": "object",
+            "description": "事件效果",
+            "required": ["character"],
+            "properties": {
+              "character": {
+                "type": "string",
+                "description": "目标角色名称"
+              },
+              "vector_delta": {
+                "type": "array",
+                "minItems": 4,
+                "maxItems": 4,
+                "items": {
+                  "type": "number",
+                  "minimum": -1.0,
+                  "maximum": 1.0
+                },
+                "description": "4D向量偏移量（relation类型使用）"
+              },
+              "delta_magnitude": {
+                "type": "number",
+                "description": "变化幅度（individual类型使用）"
+              }
+            }
+          }
+        }
+      }
+    },
+
+    "art_weights": {
+      "type": "object",
+      "description": "艺术权重层：调节推演的戏剧性和随机性",
+      "properties": {
+        "dramatic": {
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 1.0,
+          "default": 0.5,
+          "description": "戏剧性权重：放大剧烈变化"
+        },
+        "surprise": {
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 1.0,
+          "default": 0.5,
+          "description": "惊喜度权重：加入随机扰动"
+        },
+        "theme": {
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 1.0,
+          "default": 0.5,
+          "description": "主题一致性权重"
+        }
+      }
+    }
+  }
+}

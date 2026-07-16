@@ -1,0 +1,911 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GravityWorld v3.2 可视化前端（内置推演引擎)</title>
+<script src="./js/echarts.min.js"></script>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Microsoft YaHei', 'PingFang SC', sans-serif; background: #0a0e1a; color: #e2e8f0; min-height: 100vh; }
+  .header { background: linear-gradient(135deg, #1a2744 0%, #0a0e1a 100%); padding: 12px 24px; border-bottom: 1px solid #2a3a5c; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; position: sticky; top: 0; z-index: 100; }
+  .header h1 { font-size: 18px; background: linear-gradient(90deg, #60a5fa, #a78bfa); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+  .header .subtitle { font-size: 11px; color: #64748b; margin-top: 2px; }
+  .file-input-wrapper { position: relative; overflow: hidden; display: inline-block; }
+  .file-input-wrapper input[type=file] { position: absolute; left: -9999px; }
+  .file-input-wrapper label { display: inline-block; padding: 6px 16px; background: linear-gradient(135deg, #2563eb, #4f46e5); color: white; border-radius: 6px; cursor: pointer; font-size: 12px; transition: opacity 0.2s; }
+  .file-input-wrapper label:hover { opacity: 0.9; }
+  .export-btn { display: inline-block; padding: 5px 12px; background: #1e293b; border: 1px solid #334155; color: #94a3b8; border-radius: 6px; cursor: pointer; font-size: 11px; transition: all 0.2s; }
+  .export-btn:hover { border-color: #60a5fa; color: #e2e8f0; }
+  .export-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .export-divider { width: 1px; height: 16px; background: #2a3a5c; }
+  .time-bar { background: #111827; border-bottom: 1px solid #2a3a5c; padding: 10px 24px; display: none; align-items: center; gap: 16px; position: sticky; top: 56px; z-index: 99; }
+  .time-bar.visible { display: flex; }
+  .time-bar label { font-size: 12px; color: #94a3b8; white-space: nowrap; }
+  .time-bar input[type=range] { flex: 1; max-width: 600px; accent-color: #60a5fa; }
+  .time-bar .time-display { font-size: 14px; font-weight: 700; color: #60a5fa; min-width: 60px; text-align: center; }
+  .time-bar .play-btn { padding: 4px 12px; background: #1e293b; border: 1px solid #334155; color: #94a3b8; border-radius: 4px; cursor: pointer; font-size: 12px; }
+  .time-bar .play-btn:hover { border-color: #60a5fa; color: #e2e8f0; }
+  .main-layout { display: flex; min-height: calc(100vh - 110px); }
+  .sidebar { width: 220px; flex-shrink: 0; background: #111827; border-right: 1px solid #2a3a5c; padding: 16px; overflow-y: auto; }
+  .sidebar-title { font-size: 13px; font-weight: 600; color: #f1f5f9; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid #2a3a5c; }
+  .sidebar-section { margin-bottom: 16px; }
+  .sidebar-label { font-size: 11px; color: #64748b; margin-bottom: 6px; display: block; }
+  .slider-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+  .slider-row label { font-size: 11px; color: #94a3b8; width: 60px; flex-shrink: 0; }
+  .slider-row input[type=range] { flex: 1; }
+  .slider-row .val { font-size: 11px; color: #e2e8f0; width: 32px; text-align: right; }
+  .checkbox-row { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; font-size: 11px; color: #94a3b8; cursor: pointer; }
+  .checkbox-row input { cursor: pointer; }
+  .run-btn { width: 100%; padding: 8px; background: linear-gradient(135deg, #2563eb, #4f46e5); color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 12px; margin-top: 8px; }
+  .run-btn:hover { opacity: 0.9; }
+  .run-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .content { flex: 1; padding: 16px 24px; overflow-y: auto; }
+  .main-tabs { display: flex; gap: 4px; margin-bottom: 16px; border-bottom: 1px solid #2a3a5c; padding-bottom: 0; }
+  .main-tab { padding: 10px 20px; background: transparent; border: none; border-bottom: 2px solid transparent; cursor: pointer; font-size: 13px; color: #64748b; transition: all 0.2s; margin-bottom: -1px; }
+  .main-tab.active { color: #60a5fa; border-bottom-color: #60a5fa; font-weight: 600; }
+  .main-tab:hover:not(.active) { color: #94a3b8; }
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+  .grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+  .card { background: #111827; border: 1px solid #2a3a5c; border-radius: 10px; padding: 16px; }
+  .card-title { font-size: 13px; font-weight: 600; margin-bottom: 12px; color: #f1f5f9; display: flex; align-items: center; gap: 8px; }
+  .card-title::before { content: ''; width: 3px; height: 16px; background: linear-gradient(180deg, #60a5fa, #8b5cf6); border-radius: 2px; }
+  .chart { width: 100%; height: 460px; }
+  .chart-lg { height: 500px; }
+  .chart-sm { height: 300px; }
+  .stat-bar { display: flex; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; }
+  .stat-chip { background: #0a0e1a; border: 1px solid #2a3a5c; border-radius: 6px; padding: 8px 14px; text-align: center; }
+  .stat-chip-value { font-size: 18px; font-weight: 700; color: #60a5fa; }
+  .stat-chip-label { font-size: 10px; color: #475569; margin-top: 2px; }
+  .data-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  .data-table th { background: #0a0e1a; padding: 8px 10px; text-align: left; color: #64748b; font-weight: 500; border-bottom: 1px solid #2a3a5c; }
+  .data-table td { padding: 8px 10px; border-bottom: 1px solid #1a2744; }
+  .data-table tr:hover td { background: #0a0e1a; }
+  .tag { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 500; }
+  .tag-resonance { background: #064e3b; color: #34d399; }
+  .tag-conflict { background: #7f1d1d; color: #f87171; }
+  .tag-neutral { background: #374151; color: #9ca3af; }
+  .tag-defection { background: #581c87; color: #c084fc; }
+  .tag-anchor { background: #7c2d12; color: #fb923c; }
+  .tag-dynamic { background: #1e3a8a; color: #60a5fa; }
+  .empty-state { text-align: center; padding: 80px 40px; color: #475569; }
+  .empty-state h2 { font-size: 16px; margin-bottom: 8px; color: #64748b; }
+  .empty-state p { font-size: 12px; }
+  .param-row { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #1a2744; font-size: 12px; }
+  .param-row:last-child { border-bottom: none; }
+  .param-label { color: #64748b; }
+  .param-value { color: #e2e8f0; font-weight: 500; }
+  @media (max-width: 1200px) { .grid-2 { grid-template-columns: 1fr; } .sidebar { width: 180px; padding: 10px; } }
+  @media (max-width: 900px) { .main-layout { flex-direction: column; } .sidebar { width: 100%; border-right: none; border-bottom: 1px solid #2a3a5c; } }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div>
+    <h1>GravityWorld v3.2 可视化</h1>    <div class="subtitle">叙事推演引擎 · 高斯引力模型 · 8面板完整分析</div>
+  </div>
+  <div style="display:flex;gap:6px;align-items:center;">
+    <button class="export-btn" id="exportJson" onclick="exportJSON()" disabled>JSON</button>
+    <button class="export-btn" id="exportCsv" onclick="exportCSV()" disabled>CSV</button>
+    <div class="export-divider"></div>
+    <div class="file-input-wrapper">
+      <input type="file" id="fileInput" accept=".json">
+      <label for="fileInput">加载配置 JSON</label>
+    </div>
+  </div>
+</div>
+
+<div class="time-bar" id="timeBar">
+  <label>时间步:</label>
+  <input type="range" id="timeSlider" min="0" max="50" value="0" oninput="updateCurrentStep(this.value)">
+  <span class="time-display" ▶meDisplay">0</span>
+  <button class="play-btn" id="playBtn" onclick="togglePlay()">▶播▶button>
+</div>
+
+<div class="main-layout">
+  <div class="sidebar" id="sidebar">
+    <div class="sidebar-title">控制面板</div>
+    <div class="empty-state" id="sidebarEmpty" style="padding:20px;"><p>请先加载配置</p></div>
+    <div id="sidebarContent" style="display:none;">
+      <div class="sidebar-section">
+        <span class="sidebar-label">推演步数</span>
+        <div class="slider-row">
+          <input type="range" id="stepsSlider" min="10" max="200" value="50" style="flex:1;" oninput="document.getElementById('stepsVal').textContent=this.value">
+          <span▶="val" id="stepsVal">50</span>
+        </div>
+        <button class="run-btn" id="runBtn" onclick="runEvolution()">▶运行▶演</button>
+      </div>
+      <div class="sidebar-section">
+        <span class="sidebar-label">角色筛选</span>选      <div id="charCheckboxes"></div>
+      </div>
+      <div class="sidebar-section">
+        <span class="sidebar-label">势力显示</span>
+        <div id="factionCheckboxes"></div>
+      </div>
+      <div class="sidebar-section">
+        <span class="sidebar-label">数据层</span>层     <div class="checkbox-row"><input type="checkbox" id="showRaw" checked><label for="showRaw">原始向量</label></div>
+        <div class="checkbox-row"><input type="checkbox" id="showEff" checked><label for="showEff">有效向量</label></div>
+        <div class="checkbox-row"><input type="checkbox" id="showAff" checked><label for="showAff">附着向量</label></div>
+        <div class="checkbox-row"><input type="checkbox" id="show据<" checked><label for="showPull">势力牵引</label></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="content" id="mainContent">
+    <div class="empty-state">
+      <h2>未加载数据</h2>
+  据<p>点击右上角「加载配置 JSON」选择 v3.2 配置文件</p>
+      <p style="margin-top:6px;font-size:11px;">支持: config/example_v32.json / romeo_juliet_v32.json</p>
+    </div>
+  </div>
+</div>
+
+<script>
+
+const V = {
+  zeros(n) { return Array(n).fill(0); },
+  add(a, b) { return a.map((v, i) => v + b[i]); },
+  sub(a, b) { return a.map((v, i) => v - b[i]); },
+  scale(a, s) { return a.map(v => v * s); },
+  mul(a, b) { return a.map((v, i) => v * b[i]); },
+  dot(a, b) { return a.reduce((s, v, i) => s + v * b[i], 0); },
+  norm(v) { return Math.sqrt(v.reduce((s, x) => s + x * x, 0)); },
+  tanh(v) { return v.map(x => Math.tanh(x)); },
+  clip(v, min, max) { return v.map(x => Math.max(min, Math.min(max, x))); },
+  dist(a, b) { return this.norm(this.sub(a, b)); },
+  copy(v) { return [...v]; }
+};
+
+function cosine_similarity(v1, v2, dim_weights) {
+  if (!dim_weights) dim_weights = [1, 1, 1, 1];
+  const w = dim_weights;
+  const v1w = V.mul(v1, w), v2w = V.mul(v2, w);
+  const dot = V.dot(v1w, v2w);
+  const n1 = V.norm(v1w), n2 = V.norm(v2w);
+  if (n1 < 1e-10 || n2 < 1e-10) return 0.0;
+  return dot / (n1 * n2);
+}
+
+class MetaRule {
+  constructor(data) {
+    this.constants = data.constants || [];
+    this.G = data.G !== undefined ? data.G : 1.0;
+    this.gamma = data.gamma !== undefined ? data.gamma : 2.0;
+    this.dim_weights = data.dim_weights || [1,1,1,1];
+    this.distance_power = data.distance_power !== undefined ? data.distance_power : 2.0;
+    this.distance_scale = data.distance_scale !== undefined ? data.distance_scale : 1.5;
+    this.peak_force = data.peak_force !== undefined ? data.peak_force : 3.0;
+    this.dt = data.dt !== undefined ? data.dt : 0.01;
+    this.min_distance = data.min_distance !== undefined ? data.min_distance : 0.1;
+    this.factor_mass_coeff = data.factor_mass_coeff !== undefined ? data.factor_mass_coeff : 5.0;
+    this.G = Math.max(0, this.G); this.gamma = Math.max(0, this.gamma);
+    this.distance_power = Math.max(0.1, this.distance_power); this.distance_scale = Math.max(0.1, this.distance_scale);
+    this.peak_force = Math.max(0, this.peak_force); this.dt = Math.max(0.001, this.dt);
+    this.min_distance = Math.max(0.001, this.min_distance); this.factor_mass_coeff = Math.max(0.1, this.factor_mass_coeff);
+  }
+}
+
+class GravityFactor {
+  constructor(data) { this.name = data.name; this.mass = data.mass !== undefined ? data.mass : 0.5; this.field_type = data.field_type || 'constant'; this.field_params = data.field_params || { vector: [0,0,0,0] }; this.affiliation_weights = data.affiliation_weights || {}; this.mass = Math.max(0, Math.min(1, this.mass)); }
+  get field_vector() { return this.field_params.vector || [0,0,0,0]; }
+}
+
+class Character {
+  constructor(data) { this.name = data.name; this.mass = data.mass !== undefined ? data.mass : 0.5; this.vector = V.clip(data.vector || [0,0,0,0], -1, 1); this.plasticity = data.plasticity !== undefined ? data.plasticity : 0.5; this.affiliations = data.affiliations || {}; this.alive = data.alive !== undefined ? data.alive : true; this.death_step = data.death_step !== undefined ? data.death_step : -1; this.mass = Math.max(0, Math.min(1, this.mass)); this.plasticity = Math.max(0, Math.min(1, this.plasticity)); this.history = []; }
+  get vector_np() { return this.vector; }
+  effective_vector(factors, meta_rule) {
+    let v_eff = V.copy(this.vector); const coeff = meta_rule.factor_mass_coeff; let total_pull = V.zeros(4);
+    for (const factor of factors) { let w; if (factor.name in this.affiliations) w = this.affiliations[factor.name]; else if (this.name in factor.affiliation_weights) w = factor.affiliation_weights[this.name]; else { const sim = cosine_similarity(this.vector, factor.field_vector, meta_rule.dim_weights); w = Math.max(0, Math.min(1, sim)); } total_pull = V.add(total_pull, V.scale(factor.field_vector, w * factor.mass * coeff)); }
+    const pull_norm = V.norm(total_pull); if (pull_norm > 1e-10) total_pull = V.scale(total_pull, Math.tanh(pull_norm) / pull_norm);
+    v_eff = V.add(v_eff, total_pull); return V.tanh(v_eff);
+  }
+  apply_delta(delta, art_weights) { if (!this.alive) return; if (art_weights) { const threshold = 0.3 * (1.0 + (1.0 - this.mass)); if (V.norm(delta) > threshold) delta = V.scale(delta, 1 + art_weights.dramatic * 0.5); const noise = Array.from({length: 4}, () => (Math.random() - 0.5) * 0.1 * art_weights.surprise); delta = V.add(delta, noise); } delta = V.scale(delta, this.plasticity); this.vector = V.clip(V.add(this.vector, delta), -1, 1); }
+  snapshot() { return { name: this.name, mass: this.mass, vector: V.copy(this.vector), plasticity: this.plasticity, alive: this.alive, death_step: this.death_step }; }
+}
+
+class Anchor {
+  constructor(data) { this.step = data.step; this.name = data.name; this.anchor_type = data.anchor_type || 'temporary'; this.description = data.description || ''; this.effect = data.effect || {}; this.triggered = data.triggered || false; }
+  to_dict() { return { step: this.step, name: this.name, anchor_type: this.anchor_type, description: this.description, effect: this.effect, triggered: this.triggered }; }
+}
+
+class ArtWeights {
+  constructor(data) { this.dramatic = data.dramatic !== undefined ? data.dramatic : 0.5; this.surprise = data.surprise !== undefined ? data.surprise : 0.5; this.theme = data.theme !== undefined ? data.theme : 0.5; this.dramatic = Math.max(0, Math.min(1, this.dramatic)); this.surprise = Math.max(0, Math.min(1, this.surprise)); this.theme = Math.max(0, Math.min(1, this.theme)); }
+}
+
+class FactionManager {
+  constructor() { this.factions = {}; }
+  init_from_factors(factors) { for (const f of factors) this.factions[f.name] = { center: V.copy(f.field_vector), members: {} }; }
+  assign_members(characters, meta_rule) { for (const [char_name, char] of Object.entries(characters)) { let best_f = null, best_l = -1; for (const [fname, finfo] of Object.entries(this.factions)) { const sim = cosine_similarity(char.vector, finfo.center, meta_rule.dim_weights); const loy = (sim + 1) / 2.0; if (loy > best_l) { best_l = loy; best_f = fname; } } if (best_f && best_l > 0.4) this.factions[best_f].members[char_name] = char; } }
+  process_defections(characters, meta_rule, art_weights, current_step) {
+    const events = [];
+    for (const [char_name, char] of Object.entries(characters)) {
+      let curr_f = null; for (const [fname, finfo] of Object.entries(this.factions)) { if (char_name in finfo.members) { curr_f = fname; break; } } if (!curr_f) continue;
+      const sim = cosine_similarity(char.vector, this.factions[curr_f].center, meta_rule.dim_weights); const curr_l = (sim + 1) / 2.0; let threshold = 0.3; if (art_weights) threshold -= art_weights.dramatic * 0.1; if (curr_l > threshold) continue;
+      let best_f = null, best_gain = 0; let req = 0.15; if (art_weights) req -= art_weights.surprise * 0.1;
+      for (const [fname, finfo] of Object.entries(this.factions)) { if (fname === curr_f) continue; const sim2 = cosine_similarity(char.vector, finfo.center, meta_rule.dim_weights); const new_l = (sim2 + 1) / 2.0; const gain = new_l - curr_l; if (gain > req && gain > best_gain) { best_gain = gain; best_f = fname; } }
+      if (best_f) { delete this.factions[curr_f].members[char_name]; this.factions[best_f].members[char_name] = char; events.push({ step: current_step, character: char_name, from: curr_f, to: best_f, type: 'defection' }); }
+    }
+    return events;
+  }
+}
+
+function detect_dynamic_anchors(characters, prev_s, curr_s, meta_rule, art_weights, step) {
+  const anchors = [];
+  for (const [name, cv] of Object.entries(curr_s)) { const pv = prev_s[name] || cv; const delta = V.dist(cv, pv); const mass = characters[name] ? characters[name].mass : 0.5; let threshold = 0.3 * (0.5 + mass * 0.5); if (art_weights) threshold -= art_weights.dramatic * 0.1; if (delta > threshold) anchors.push(new Anchor({ step, name: name + ' 值偏移', anchor_type: 'individual', description: '|deltaV| = ' + delta.toFixed(2), effect: { character: name, delta_magnitude: delta } })); }
+  const names = Object.keys(curr_s);
+  for (let i = 0; i < names.length; i++) for (let j = i + 1; j < names.length; j++) { const c1 = names[i], c2 = names[j]; const p1 = prev_s[c1] || curr_s[c1], p2 = prev_s[c2] || curr_s[c2]; const cs = cosine_similarity(curr_s[c1], curr_s[c2]); const ps = cosine_similarity(p1, p2); if (Math.abs(cs - ps) > 0.3) anchors.push(new Anchor({ step, name: c1 + '-' + c2 + ' 关系偏移', anchor_type: 'relation', description: 'sim ' + ps.toFixed(2) + ' -> ' + cs.toFixed(2), effect: { pair: [c1, c2], cos_sim_change: cs - ps } })); }
+  return anchors;
+}
+
+function compute_vector_gravity(characters, eff, meta_rule) {
+  const ids = Object.keys(characters).sort(); const n = ids.length; const F = Array.from({length: n}, () => Array(n).fill(0));
+  for (let i = 0; i < n; i++) for (let j = i + 1; j < n; j++) { const vi = eff[ids[i]], vj = eff[ids[j]]; const mi = characters[ids[i]].mass, mj = characters[ids[j]].mass; const sim = cosine_similarity(vi, vj, meta_rule.dim_weights); const r = V.dist(vi, vj); const decay = Math.exp(-r / meta_rule.distance_scale); const Fv = meta_rule.G * mi * mj * sim * decay; F[i][j] = Fv; F[j][i] = Fv; }
+  return { F_matrix: F, ids };
+}
+
+function interference_analysis(char_dict, eff, F_matrix, ids) {
+  const pairs = [], names = {}; for (const cid of ids) names[cid] = char_dict[cid].name;
+  for (let i = 0; i < ids.length; i++) for (let j = i + 1; j < ids.length; j++) { const vi = eff[ids[i]], vj = eff[ids[j]]; const cos_delta = cosine_similarity(vi, vj); const F = F_matrix[i][j]; let label, tension, drive; if (cos_delta > 0.5) { label = 'resonance'; tension = 1.0 - cos_delta; drive = 'gravity'; } else if (cos_delta < -0.5) { label = 'conflict'; tension = 1.0 - Math.abs(cos_delta); drive = 'repulsion'; } else { label = 'neutral'; tension = 1.0 - Math.abs(cos_delta); drive = 'gravity'; } pairs.push({ pair: { a_id: ids[i], b_id: ids[j], a_name: names[ids[i]], b_name: names[ids[j]] }, cos_delta, F_value: F, state: { label, confidence: Math.abs(cos_delta), tension, drive } }); }
+  const total_intensity = F_matrix.flat().reduce((s, v) => s + Math.abs(v), 0);
+  return { total_intensity, pairs };
+}
+
+function _compute_art_scores(eff) { const norms = Object.values(eff).map(v => V.norm(v)); const dramatic = Math.min(1.0, norms.reduce((a,b)=>a+b,0)/(norms.length*1.5+1e-10)); const surprise = Math.random()*0.15; const theme = Math.min(1.0, norms.reduce((a,b)=>a+b,0)/(norms.length+1e-10)); return { dramatic: Math.round(dramatic*10000)/10000, surprise: Math.round(surprise*10000)/10000, theme: Math.round(theme*10000)/10000 }; }
+
+function evolve_step(characters, factors, meta_rule, faction_manager, art_weights, current_step) {
+  const char_ids = Object.keys(characters).sort(); const eff_vectors = {}, aff_vectors = {};
+  for (const cid of char_ids) { eff_vectors[cid] = characters[cid].effective_vector(factors, meta_rule); aff_vectors[cid] = V.sub(eff_vectors[cid], characters[cid].vector); }
+  const n = char_ids.length, G = meta_rule.G, dt = meta_rule.dt; const forces = {}; for (const cid of char_ids) forces[cid] = V.zeros(4);
+  for (let i = 0; i < n; i++) for (let j = i + 1; j < n; j++) { const ci = char_ids[i], cj = char_ids[j]; const vi = eff_vectors[ci], vj = eff_vectors[cj]; const mi = characters[ci].mass, mj = characters[cj].mass; const sim = cosine_similarity(vi, vj, meta_rule.dim_weights); const r = V.dist(vi, vj); const R = meta_rule.distance_scale, peak = meta_rule.peak_force; const r_norm = r / R; const gauss = r_norm * Math.exp(-r_norm * r_norm); const F = G * mi * mj * sim * peak * gauss; const delta_i = V.scale(V.sub(vj, vi), F / (mi + 1e-10) * dt); const delta_j = V.scale(V.sub(vi, vj), F / (mj + 1e-10) * dt); forces[ci] = V.add(forces[ci], delta_i); forces[cj] = V.add(forces[cj], delta_j); }
+  const prev_snapshot = {}; for (const cid of char_ids) prev_snapshot[characters[cid].name] = V.copy(characters[cid].vector);
+  for (const cid of char_ids) if (characters[cid].alive) characters[cid].apply_delta(forces[cid], art_weights);
+  const defection_events = faction_manager.process_defections(characters, meta_rule, art_weights, current_step);
+  const current_snapshot = {}; for (const cid of char_ids) current_snapshot[characters[cid].name] = V.copy(characters[cid].vector);
+  return { eff_vectors, aff_vectors, prev_snapshot, current_snapshot, defection_events };
+}
+
+function evolve_full(characters, factors, meta_rule, faction_manager, steps, art_weights, fixed_anchors) {
+  if (!fixed_anchors) fixed_anchors = []; const history = [], anchor_log = [];
+  for (let step = 0; step < steps; step++) {
+    const active = fixed_anchors.filter(a => a.step === step);
+    for (const anchor of active) { const eff = anchor.effect; if (eff.character) { const cname = eff.character; for (const [cid, char] of Object.entries(characters)) { if (char.name === cname) { const action = eff.action || 'delta'; if (['die', 'freeze', 'kill'].includes(action)) { char.alive = false; char.death_step = step; } else { char.apply_delta(eff.vector_delta || [0,0,0,0], art_weights); } anchor.triggered = true; anchor_log.push(anchor.to_dict()); break; } } } }
+    const { eff_vectors, aff_vectors, prev_snapshot, current_snapshot, defection_events } = evolve_step(characters, factors, meta_rule, faction_manager, art_weights, step);
+    const dynamic = detect_dynamic_anchors(characters, prev_snapshot, current_snapshot, meta_rule, art_weights, step);
+    for (const da of dynamic) anchor_log.push(da.to_dict());
+    const art_scores = _compute_art_scores(eff_vectors); const faction_states = {};
+    for (const [fname, finfo] of Object.entries(faction_manager.factions)) faction_states[fname] = Object.keys(finfo.members);
+    history.push({ step, eff_vectors: deepCopyVectors(eff_vectors), aff_vectors: deepCopyVectors(aff_vectors), snapshot: deepCopySnapshot(current_snapshot), defection_events, art_scores, faction_states });
+  }
+  return { history, anchor_log };
+}
+
+function deepCopyVectors(v) { const r = {}; for (const k in v) r[k] = V.copy(v[k]); return r; }
+function deepCopySnapshot(s) { const r = {}; for (const k in s) r[k] = V.copy(s[k]); return r; }
+function loadV32Config(data) { const meta = new MetaRule(data.meta_rules || {}); const factors = (data.gravity_factors || []).map(d => new GravityFactor(d)); const characters = {}; for (const cd of data.characters || []) characters[cd.name] = new Character(cd); const anchors = (data.anchors || data.fixed_anchors || []).map(d => new Anchor(d)); const art_weights = new ArtWeights(data.art_weights || {}); return { meta, factors, characters, anchors, art_weights, data }; }
+
+let appData = null, currentTab = 'data', currentStep = 0, isPlaying = false, playTimer = null;
+
+function switchTab(tab) {
+  currentTab = tab;
+  document.querySelectorAll('.main-tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.toggle('active', p.dataset.tab === tab));
+  const active = document.querySelector('.tab-panel.active');
+  if (active) {
+    const charts = active.querySelectorAll('[id^="chart-"]');
+    let allReady = charts.length > 0;
+    charts.forEach(div => { if (!echarts.getInstanceByDom(div)) allReady = false; });
+    if (allReady) {
+      updateChartsForTab(tab, currentStep);
+      charts.forEach(div => { const c = echarts.getInstanceByDom(div); if (c) c.resize(); });
+    } else {
+      active.innerHTML = '';
+      renderCurrentTab();
+    }
+  }
+}
+
+function renderCurrentTab() {
+  if (!appData) return;
+  const active = document.querySelector('.tab-panel.active');
+  if (!active) return;
+  const tab = active.dataset.tab;
+  if (tab === 'data') renderDataTab();
+  else if (tab === 'trajectory') renderTrajectoryTab();
+  else if (tab === 'network') renderNetworkTab();
+  else if (tab === 'faction') renderFactionTab();
+  else if (tab === 'events') renderEventsTab();
+  else if (tab === 'physics') renderPhysicsTab();
+}
+
+function updateCurrentStep(step) {
+  step = parseInt(step); currentStep = step;
+  document.getElementById('timeDisplay').textContent = step;
+  const totalSteps = parseInt(document.getElementById('timeSlider').max) + 1;
+  document.getElementById('stat-steps').textContent = step + ' / ' + totalSteps;
+  updateChartsForTab(currentTab, step);
+}
+
+function updateChartsForTab(tab, step) {
+  const active = document.querySelector('.tab-panel[data-tab="' + tab + '"]');
+  if (!active || !active.innerHTML.trim()) return;
+  switch(tab) {
+    case 'trajectory': updateTrajectoryCharts(step); break;
+    case 'network': updateNetworkCharts(step); break;
+    case 'faction': updateFactionCharts(step); break;
+    case 'events': updateEventsCharts(step); break;
+    case 'physics': updatePhysicsCharts(step); break;
+    case 'data': updateDataCharts(step); break;
+  }
+}
+
+function runEvolution() {
+  if (!appData || !appData.characters || !appData.factors) {
+    alert('请先加载有效配置');
+    return;
+  }
+  const steps = parseInt(document.getElementById('stepsSlider').value);
+  const result = evolve_full(appData.characters, appData.factors, appData.meta, appData.faction_manager, steps, appData.art_weights, appData.anchors);
+  appData.history = result.history; appData.anchor_log = result.anchor_log;
+  const last = appData.history[appData.history.length - 1];
+  const { F_matrix, ids } = compute_vector_gravity(appData.characters, last.eff_vectors, appData.meta);
+  appData.interference = interference_analysis(appData.characters, last.eff_vectors, F_matrix, ids);
+  document.getElementById('timeSlider').max = steps - 1; document.getElementById('timeSlider').value = 0; currentStep = 0;
+  document.getElementById('timeDisplay').textContent = '0'; document.getElementById('timeBar').classList.add('visible');
+  document.getElementById('stat-steps').textContent = '0 / ' + steps;
+  document.getElementById('stat-chars').textContent = Object.keys(appData.characters).length;
+  document.getElementById('stat-factions').textContent = Object.keys(appData.faction_manager.factions).length;
+  document.getElementById('stat-pairs').textContent = appData.interference.pairs.length;
+  document.getElementById('stat-anchors').textContent = appData.anchor_log.length;
+  document.getElementById('stat-defections').textContent = appData.history.reduce((s, h) => s + h.defection_events.length, 0);
+  document.querySelectorAll('.export-btn').forEach(b => b.disabled = false);
+  switchTab('data');
+}
+
+function togglePlay() {
+  const btn = document.getElementById('playBtn');
+  if (isPlaying) { clearInterval(playTimer); isPlaying = false; btn.textContent = '▶ 播放'; return; }
+  isPlaying = true; btn.textContent = '⏸ 暂停';
+  playTimer = setInterval(() => { const slider = document.getElementById('timeSlider'); let next = parseInt(slider.value) + 1; if (next > parseInt(slider.max)) next = 0; slider.value = next; updateCurrentStep(next); }, 400);
+}
+
+const CHAR_COLORS = ['#ef4444', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4', '#f97316'];
+const FAC_COLORS = ['#2563eb', '#ec4899', '#f59e0b', '#10b981', '#8b5cf6', '#ef4444'];
+
+function getCharIds() {
+  const allIds = Object.keys(appData.characters).sort();
+  return allIds.filter(id => {
+    const cb = document.getElementById('ch-' + id);
+    return !cb || cb.checked;
+  });
+}
+function getCharNames() { return getCharIds().map(id => appData.characters[id].name); }
+function getFactionNames() { return Object.keys(appData.faction_manager.factions); }
+
+function buildTrajectorySeries(step) {
+  if (!appData || !appData.history || !appData.history.length) return [];
+  const steps = appData.history.length; const ids = getCharIds(); const series = [];
+  for (let i = 0; i < ids.length; i++) {
+    const name = appData.characters[ids[i]].name; const traj = [];
+    for (let s = 0; s < steps; s++) { const vec = appData.history[s].snapshot[name]; traj.push([vec[0], vec[1]]); }
+    const c = CHAR_COLORS[i % CHAR_COLORS.length];
+    series.push({ name, type: 'line', smooth: true, data: traj, symbol: 'none', lineStyle: { width: 2, color: c }, z: 2 });
+    series.push({ name: name + ' 起点', type: 'scatter', data: [traj[0]], symbolSize: 8, itemStyle: { color: c, opacity: 0.4 }, z: 1 });
+    series.push({ name: name + ' 当前', type: 'scatter', data: [traj[step]], symbolSize: 20, itemStyle: { color: c, borderColor: '#fff', borderWidth: 2, shadowBlur: 12, shadowColor: c }, z: 10 });
+  }
+  return series;
+}
+
+function buildRadarData(step) {
+  if (!appData || !appData.history || !appData.history.length || step >= appData.history.length) return [];
+  const ids = getCharIds(); const dims = ['自由-秩序', '个体-集体', '理想-现实', '变革-保守'];
+  return ids.map((cid, i) => {
+    const name = appData.characters[cid].name; const vec = appData.history[step].snapshot[name];
+    return { value: vec.map(v => Math.abs(v)), name, itemStyle: { color: CHAR_COLORS[i % CHAR_COLORS.length] }, lineStyle: { color: CHAR_COLORS[i % CHAR_COLORS.length], width: 2 }, areaStyle: { opacity: 0.08 } };
+  });
+}
+
+function buildNetworkData(step) {
+  if (!appData || !appData.history || !appData.history.length || step >= appData.history.length) return { nodes: [], links: [] };
+  const rec = appData.history[step]; const { F_matrix, ids } = compute_vector_gravity(appData.characters, rec.eff_vectors, appData.meta); const analysis = interference_analysis(appData.characters, rec.eff_vectors, F_matrix, ids);
+  const activeNames = new Set(getCharNames());
+  const names = [...new Set(analysis.pairs.flatMap(p => [p.pair.a_name, p.pair.b_name]))].filter(n => activeNames.has(n));
+  const nodes = names.map(n => ({ name: n, symbolSize: 35, itemStyle: { color: '#3b82f6', shadowBlur: 10, shadowColor: 'rgba(59,130,246,0.3)' }, label: { color: '#f1f5f9', fontSize: 12 } }));
+  const links = analysis.pairs.filter(p => activeNames.has(p.pair.a_name) && activeNames.has(p.pair.b_name)).map(p => {
+    const color = p.state.label === 'resonance' ? '#10b981' : p.state.label === 'conflict' ? '#ef4444' : '#64748b';
+    return { source: p.pair.a_name, target: p.pair.b_name, value: Math.abs(p.F_value), lineStyle: { width: 1 + Math.abs(p.F_value) * 3, color, opacity: 0.6 + Math.abs(p.cos_delta) * 0.4, curveness: 0.2 }, label: { show: true, formatter: p.state.label, fontSize: 9, color: '#64748b' } };
+  });
+  return { nodes, links };
+}
+
+function buildFactionNetworkData(step) {
+  if (!appData || !appData.history || !appData.history.length || step >= appData.history.length) return { nodes: [], links: [] };
+  const rec = appData.history[step]; const states = rec.faction_states;
+  const names = Object.keys(states); const nodes = [], links = [];
+  for (let i = 0; i < names.length; i++) {
+    const fname = names[i]; const c = FAC_COLORS[i % FAC_COLORS.length];
+    nodes.push({ name: fname, symbolSize: 55, category: 0, itemStyle: { color: c, shadowBlur: 15, shadowColor: 'rgba(255,255,255,0.2)' }, label: { fontSize: 13, fontWeight: 'bold', color: '#f1f5f9' } });
+    const members = states[fname] || [];
+    for (const m of members) {
+      nodes.push({ name: m, symbolSize: 22, category: 1, itemStyle: { color: c }, label: { fontSize: 10, color: '#94a3b8' } });
+      links.push({ source: fname, target: m, lineStyle: { color: c, opacity: 0.6, width: 2 } });
+    }
+  }
+  return { nodes, links };
+}
+
+function buildFactionPullData(step) {
+  const ids = getCharIds(); const factors = appData.factors; const meta = appData.meta; const categories = factors.map(f => f.name);
+  return categories.map((facName, fi) => {
+    const data = ids.map(cid => {
+      const char = appData.characters[cid]; const factor = factors.find(f => f.name === facName); let w;
+      if (factor.name in char.affiliations) w = char.affiliations[factor.name]; else if (char.name in factor.affiliation_weights) w = factor.affiliation_weights[char.name]; else { const sim = cosine_similarity(char.vector, factor.field_vector, meta.dim_weights); w = Math.max(0, Math.min(1, sim)); }
+      const pull = w * factor.mass * meta.factor_mass_coeff; return Math.round(pull * 100) / 100;
+    });
+    return { name: facName, type: 'bar', stack: 'total', data, itemStyle: { color: FAC_COLORS[fi % FAC_COLORS.length] } };
+  });
+}
+
+function buildFactionRiseData(step) {
+  if (!appData || !appData.history || !appData.history.length) return [];
+  const steps = appData.history.map(h => h.step); const names = getFactionNames();
+  return names.map((fname, i) => ({
+    name: fname, type: 'line', stack: 'total', areaStyle: { opacity: 0.3 }, data: appData.history.map(h => h.faction_states[fname] ? h.faction_states[fname].length : 0),
+    lineStyle: { color: FAC_COLORS[i % FAC_COLORS.length] }, itemStyle: { color: FAC_COLORS[i % FAC_COLORS.length] },
+    markLine: { silent: true, data: [{ xAxis: step, lineStyle: { color: '#f59e0b', type: 'dashed' }, label: { formatter: 'Step ' + step, color: '#f59e0b' } }] }
+  }));
+}
+
+function getAllTimelineEvents() {
+  if (!appData || !appData.anchor_log) return [];
+  const events = [];
+  for (const a of appData.anchor_log) { const label = a.type === 'defection' ? '叛变' : a.anchor_type === 'relation' ? '关系偏移' : a.anchor_type === 'individual' ? '值偏移' : '锚点'; events.push({ step: a.step, name: a.name, label, color: a.type === 'defection' ? '#c084fc' : a.anchor_type === 'relation' ? '#a78bfa' : '#fb923c' }); }
+  for (const rec of appData.history) for (const d of rec.defection_events) events.push({ step: d.step, name: d.character + ' 叛变至 ' + d.to, label: '叛变', color: '#c084fc' });
+  return events;
+}
+
+function buildTimelineData(step) {
+  const all = getAllTimelineEvents();
+  if (all.length === 0) return { data: [], yCats: ['无事件'], step };
+  const yCats = [...new Set(all.map(e => e.name))].reverse();
+  const data = all.map(e => ({ name: e.name, value: [e.step, e.name], itemStyle: { color: e.color }, symbol: e.label === '叛变' ? 'diamond' : 'circle', symbolSize: 14 }));
+  return { data, yCats, step };
+}
+
+function buildArtData(step) {
+  if (!appData || !appData.history || !appData.history.length) {
+    return { steps: [], dramatic: [], surprise: [], theme: [], step: 0 };
+  }
+  const steps = appData.history.map(h => h.step); const dramatic = appData.history.map(h => h.art_scores.dramatic); const surprise = appData.history.map(h => h.art_scores.surprise); const theme = appData.history.map(h => h.art_scores.theme);
+  return { steps, dramatic, surprise, theme, step };
+}
+
+function buildCosHeatmapData(step) {
+  if (!appData || !appData.history || !appData.history.length || step >= appData.history.length) return { data: [], names: [] };
+  const rec = appData.history[step]; const ids = getCharIds(); const names = getCharNames(); const data = [];
+  for (let i = 0; i < ids.length; i++) for (let j = 0; j < ids.length; j++) { const vi = rec.snapshot[names[i]], vj = rec.snapshot[names[j]]; const cos = cosine_similarity(vi, vj, appData.meta.dim_weights); data.push([i, j, cos]); }
+  return { data, names };
+}
+
+function buildFHeatmapData(step) {
+  if (!appData || !appData.history || !appData.history.length || step >= appData.history.length) return { data: [], names: [], maxF: 1 };
+  const rec = appData.history[step]; const { F_matrix, ids } = compute_vector_gravity(appData.characters, rec.eff_vectors, appData.meta); const names = ids.map(id => appData.characters[id].name); const data = []; const maxF = Math.max(...F_matrix.flat().map(Math.abs)) || 1;
+  for (let i = 0; i < ids.length; i++) for (let j = 0; j < ids.length; j++) data.push([i, j, F_matrix[i][j]]);
+  return { data, names, maxF };
+}
+
+function renderDataTab() {
+  const container = document.getElementById('tab-data');
+  const chars = Object.values(appData.characters); const factions = appData.factors; const meta = appData.meta; const anchors = appData.anchors;
+  const dims = ['自由-秩序', '个体-集体', '理想-现实', '变革-保守'];
+  const charRows = chars.map(c => `<tr><td><strong>${c.name}</strong></td><td>${c.mass.toFixed(2)}</td><td>${c.plasticity.toFixed(2)}</td><td>${c.vector.map(v => v.toFixed(2)).join('</td><td>')}</td><td>${c.alive ? '存活' : '死亡'}</td></tr>`).join('');
+  const facRows = factions.map(f => `<tr><td><strong>${f.name}</strong></td><td>${f.mass.toFixed(2)}</td><td>${f.field_vector.map(v => v.toFixed(2)).join('</td><td>')}</td></tr>`).join('');
+  const anchorRows = anchors.map(a => `<tr><td>${a.step}</td><td>${a.name}</td><td>${a.anchor_type}</td><td>${a.effect.character || '-'}</td><td>${(a.effect.vector_delta || []).map(v => v.toFixed(2)).join(', ')}</td></tr>`).join('');
+  const hasRun = !!(appData.history && appData.history.length);
+  let liveDataHTML = '';
+  if (hasRun) {
+    const names = getCharNames(); const rec = appData.history[currentStep];
+    const liveRows = names.map(name => {
+      const vec = rec.snapshot[name]; const eff = rec.eff_vectors[name] || [0,0,0,0]; const alive = appData.characters[name].alive ? '存活' : '死亡';
+      return `<tr><td><strong>${name}</strong></td><td>${alive}</td><td>${vec.map(v => v.toFixed(3)).join('</td><td>')}</td><td>${eff.map(v => v.toFixed(3)).join('</td><td>')}</td></tr>`;
+    }).join('');
+    liveDataHTML = `
+      <div class="card" style="margin-top:16px;">
+        <div class="card-title">当前步数据 (Step ${currentStep})</div>
+        <div style="overflow:auto;max-height:400px;">
+          <table class="data-table" id="live-data-table">
+            <thead><tr><th>角色</th><th>状态</th>${dims.map(d => '<th>' + d + ' (向量)</th>').join('')}${dims.map(d => '<th>' + d + ' (有效)</th>').join('')}</tr></thead>
+            <tbody>${liveRows}</tbody>
+          </table>
+        </div>
+      </div>
+      <div class="grid-2" style="margin-top:16px;">
+        <div class="card">
+          <div class="card-title">余弦相似度热力图</div>
+          <div id="chart-cos-heatmap" class="chart" style="height:460px;"></div>
+        </div>
+        <div class="card">
+          <div class="card-title">引力 F 热力图</div>
+          <div id="chart-f-heatmap" class="chart" style="height:460px;"></div>
+        </div>
+      </div>
+    `;
+  }
+  container.innerHTML = `
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-title">角色初始配置</div>
+        <div style="overflow:auto;max-height:400px;">
+          <table class="data-table">
+            <thead><tr><th>角色</th><th>质量</th><th>可塑性</th>${dims.map(d => '<th>' + d + '</th>').join('')}<th>状态</th></tr></thead>
+            <tbody>${charRows}</tbody>
+          </table>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">势力配置</div>
+        <div style="overflow:auto;max-height:400px;">
+          <table class="data-table">
+            <thead><tr><th>势力</th><th>质量</th>${dims.map(d => '<th>' + d + '</th>').join('')}</tr></thead>
+            <tbody>${facRows}</tbody>
+          </table>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">MetaRule 参数</div>
+        <div class="param-row"><span class="param-label">引力常数 G</span><span class="param-value">${meta.G}</span></div>
+        <div class="param-row"><span class="param-label">非线性系数 gamma</span><span class="param-value">${meta.gamma}</span></div>
+        <div class="param-row"><span class="param-label">时间步长 dt</span><span class="param-value">${meta.dt}</span></div>
+        <div class="param-row"><span class="param-label">距离幂次</span><span class="param-value">${meta.distance_power}</span></div>
+        <div class="param-row"><span class="param-label">距离尺度 R</span><span class="param-value">${meta.distance_scale}</span></div>
+        <div class="param-row"><span class="param-label">峰值强度</span><span class="param-value">${meta.peak_force}</span></div>
+        <div class="param-row"><span class="param-label">最小距离</span><span class="param-value">${meta.min_distance}</span></div>
+        <div class="param-row"><span class="param-label">4维权重</span><span class="param-value">[${meta.dim_weights.join(', ')}]</span></div>
+        <div class="param-row"><span class="param-label">势力质量系数</span><span class="param-value">${meta.factor_mass_coeff}</span></div>
+      </div>
+      <div class="card">
+        <div class="card-title">固定锚点</div>
+        <div style="overflow:auto;max-height:400px;">
+          <table class="data-table">
+            <thead><tr><th>步数</th><th>名称</th><th>类型</th><th>目标角色</th><th>向量偏移</th></tr></thead>
+            <tbody>${anchorRows || '<tr><td colspan="5" style="text-align:center;color:#64748b;">无固定锚点</td></tr>'}</tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+    ${liveDataHTML}
+    <div class="card" style="margin-top:16px; text-align:center; padding:30px; ${hasRun ? 'display:none;' : ''}">
+      <div style="font-size:14px; color:#94a3b8; margin-bottom:16px;">配置已加载，点击下方按钮开始推演演化</div>
+      <button class="run-btn" style="width:auto; padding:12px 50px; font-size:14px;" onclick="runEvolution()">▶ 运行推演</button>
+    </div>
+  `;
+  if (hasRun) { renderCosHeatmap(); renderFHeatmap(); }
+}
+
+function renderTrajectoryTab() {
+  if (!appData || !appData.history || !appData.history.length) {
+    document.getElementById('tab-trajectory').innerHTML = '<div class="empty-state"><h2>未运行推演</h2><p>请先加载配置并点击「运行推演」</p></div>';
+    return;
+  }
+  const container = document.getElementById('tab-trajectory');
+  container.innerHTML = `
+    <div class="grid-2">
+      <div class="card"><div class="panel-title">4D 轨迹投影（Dim 1 x Dim 2，当前步高亮）</div><div id="chart-trajectory" class="chart"></div></div>
+      <div class="card"><div class="panel-title">当前步角色雷达图</div><div id="chart-radar" class="chart"></div></div>
+    </div>
+  `;
+  const ec1 = echarts.init(document.getElementById('chart-trajectory')); const ec2 = echarts.init(document.getElementById('chart-radar'));
+  ec1.setOption({ tooltip: { trigger: 'axis' }, legend: { bottom: 0, textStyle: { color: '#94a3b8', fontSize: 10 }, type: 'scroll' }, grid: { left: 50, right: 30, top: 30, bottom: 50 }, xAxis: { type: 'value', name: 'Dim 1 (自由-秩序)', nameTextStyle: { color: '#64748b' }, axisLabel: { color: '#64748b' }, splitLine: { lineStyle: { color: '#1a2744' } } }, yAxis: { type: 'value', name: 'Dim 2 (个体-集体)', nameTextStyle: { color: '#64748b' }, axisLabel: { color: '#64748b' }, splitLine: { lineStyle: { color: '#1a2744' } } }, series: buildTrajectorySeries(currentStep) });
+  ec2.setOption({ tooltip: { backgroundColor: '#111827', borderColor: '#2a3a5c', textStyle: { color: '#e2e8f0' } }, legend: { bottom: 0, textStyle: { color: '#94a3b8', fontSize: 10 } }, radar: { indicator: ['自由-秩序', '个体-集体', '理想-现实', '变革-保守'].map(d => ({ name: d, max: 1 })), axisName: { color: '#94a3b8', fontSize: 11 }, splitArea: { areaStyle: { color: ['#0a0e1a', '#111827'] } }, axisLine: { lineStyle: { color: '#2a3a5c' } }, splitLine: { lineStyle: { color: '#2a3a5c' } } }, series: [{ type: 'radar', data: buildRadarData(currentStep), areaStyle: { opacity: 0.1 } }] });
+}
+
+function renderNetworkTab() {
+  if (!appData || !appData.history || !appData.history.length) {
+    document.getElementById('tab-network').innerHTML = '<div class="empty-state"><h2>未运行推演</h2><p>请先加载配置并点击「运行推演」</p></div>';
+    return;
+  }
+  const container = document.getElementById('tab-network');
+  container.innerHTML = `
+    <div class="grid-2">
+      <div class="card"><div class="panel-title">角色关系网络（当前步）</div><div id="chart-network" class="chart"></div></div>
+      <div class="card"><div class="panel-title">势力隶属网络（当前步）</div><div id="chart-faction-net" class="chart"></div></div>
+    </div>
+  `;
+  const net = buildNetworkData(currentStep);
+  let ec1 = echarts.getInstanceByDom(document.getElementById('chart-network'));
+  if (!ec1) ec1 = echarts.init(document.getElementById('chart-network'));
+  ec1.setOption({ tooltip: { backgroundColor: '#111827', borderColor: '#2a3a5c', textStyle: { color: '#e2e8f0' } }, series: [{ type: 'graph', layout: 'circular', circular: { rotateLabel: false }, data: net.nodes, links: net.links, roam: true, label: { show: true, color: '#f1f5f9', fontSize: 12, position: 'outside', distance: 8 }, lineStyle: { opacity: 0.7, curveness: 0.2 }, emphasis: { focus: 'adjacency', lineStyle: { width: 4, opacity: 1 }, itemStyle: { shadowBlur: 20, shadowColor: 'rgba(255,255,255,0.3)' } } }] });
+  const fnet = buildFactionNetworkData(currentStep);
+  let ec2 = echarts.getInstanceByDom(document.getElementById('chart-faction-net'));
+  if (!ec2) ec2 = echarts.init(document.getElementById('chart-faction-net'));
+  ec2.setOption({ tooltip: { backgroundColor: '#111827', borderColor: '#2a3a5c', textStyle: { color: '#e2e8f0' } }, legend: { show: false }, series: [{ type: 'graph', layout: 'circular', circular: { rotateLabel: false }, categories: [{ name: '势力中心', itemStyle: { color: '#f59e0b' } }, { name: '成员', itemStyle: { color: '#94a3b8' } }], data: fnet.nodes, links: fnet.links, roam: true, label: { show: true }, lineStyle: { opacity: 0.6, curveness: 0.1 }, emphasis: { focus: 'adjacency', lineStyle: { width: 3 } } }] });
+}
+
+function renderFactionTab() {
+  if (!appData || !appData.history || !appData.history.length) {
+    document.getElementById('tab-faction').innerHTML = '<div class="empty-state"><h2>未运行推演</h2><p>请先加载配置并点击「运行推演」</p></div>';
+    return;
+  }
+  const container = document.getElementById('tab-faction');
+  container.innerHTML = `
+    <div class="grid-2">
+      <div class="card"><div class="panel-title">势力牵引力分解（当前步）</div><div id="chart-faction-pull" class="chart"></div></div>
+      <div class="card"><div class="panel-title">势力兴衰动态（当前步高亮）</div><div id="chart-faction-rise" class="chart"></div></div>
+    </div>
+  `;
+  const ec1 = echarts.init(document.getElementById('chart-faction-pull'));
+  ec1.setOption({ tooltip: { trigger: 'axis' }, legend: { bottom: 0, textStyle: { color: '#94a3b8', fontSize: 10 } }, grid: { left: 50, right: 20, top: 30, bottom: 50 }, xAxis: { type: 'category', data: getCharNames(), axisLabel: { color: '#64748b', rotate: 30 }, splitLine: { lineStyle: { color: '#1a2744' } } }, yAxis: { type: 'value', axisLabel: { color: '#64748b' }, splitLine: { lineStyle: { color: '#1a2744' } } }, series: buildFactionPullData(currentStep) });
+  const ec2 = echarts.init(document.getElementById('chart-faction-rise'));
+  const riseData = buildFactionRiseData(currentStep); const steps = appData.history.map(h => h.step);
+  ec2.setOption({ tooltip: { trigger: 'axis' }, legend: { bottom: 0, textStyle: { color: '#94a3b8', fontSize: 10 } }, grid: { left: 50, right: 20, top: 30, bottom: 50 }, xAxis: { type: 'category', data: steps, axisLabel: { color: '#64748b' }, splitLine: { lineStyle: { color: '#1a2744' } } }, yAxis: { type: 'value', axisLabel: { color: '#64748b' }, splitLine: { lineStyle: { color: '#1a2744' } } }, series: riseData });
+}
+
+function renderEventsTab() {
+  if (!appData || !appData.history || !appData.history.length) {
+    document.getElementById('tab-events').innerHTML = '<div class="empty-state"><h2>未运行推演</h2><p>请先加载配置并点击「运行推演」</p></div>';
+    return;
+  }
+  const container = document.getElementById('tab-events');
+  container.innerHTML = `
+    <div class="grid-2">
+      <div class="card"><div class="panel-title">叛变 + 锚点时间线</div><div id="chart-timeline" class="chart"></div></div>
+      <div class="card"><div class="panel-title">动态锚点检测</div><div id="anchor-table" style="overflow:auto;max-height:460px;"></div></div>
+    </div>
+  `;
+  const tl = buildTimelineData(currentStep); const ec = echarts.init(document.getElementById('chart-timeline'));
+  ec.setOption({ tooltip: { formatter: p => { const d = p.data; return '<strong>' + d.name + '</strong><br/>步数: ' + d.value[0]; }, backgroundColor: '#111827', borderColor: '#2a3a5c', textStyle: { color: '#e2e8f0' } }, grid: { left: 200, right: 30, top: 30, bottom: 40 }, xAxis: { type: 'value', min: 0, max: appData.history.length - 1, axisLabel: { color: '#64748b' }, splitLine: { lineStyle: { color: '#1a2744' } }, markLine: { silent: true, data: [{ xAxis: currentStep, lineStyle: { color: '#f59e0b', type: 'dashed' }, label: { formatter: 'Step ' + currentStep, color: '#f59e0b' } }] } }, yAxis: { type: 'category', data: tl.yCats, axisLabel: { color: '#64748b', fontSize: 10 }, splitLine: { lineStyle: { color: '#1a2744' } } }, series: [{ type: 'scatter', data: tl.data, label: { show: false } }] });
+  renderAnchorTable();
+}
+
+function renderAnchorTable() {
+  const container = document.getElementById('anchor-table');
+  const rows = appData.anchor_log.slice(-30).reverse().map(a => {
+    let tagClass = 'tag-anchor'; if (a.type === 'defection') tagClass = 'tag-defection'; else if (a.anchor_type === 'relation') tagClass = 'tag-dynamic'; else if (a.anchor_type === 'individual') tagClass = 'tag-dynamic';
+    return `<tr><td>${a.step}</td><td><span class="tag ${tagClass}">${a.anchor_type}</span></td><td>${a.name}</td><td>${a.description}</td></tr>`;
+  }).join('');
+  container.innerHTML = `<table class="data-table"><thead><tr><th>步数</th><th>类型</th><th>名称</th><th>描述</th></tr></thead><tbody>${rows || '<tr><td colspan="4" style="text-align:center;color:#64748b;">无锚点事件</td></tr>'}</tbody></table>`;
+}
+
+function renderPhysicsTab() {
+  if (!appData || !appData.history || !appData.history.length) {
+    document.getElementById('tab-physics').innerHTML = '<div class="empty-state"><h2>未运行推演</h2><p>请先加载配置并点击「运行推演」</p></div>';
+    return;
+  }
+  const container = document.getElementById('tab-physics');
+  container.innerHTML = `
+    <div class="grid-2">
+      <div class="card"><div class="panel-title">高斯力曲线（物理引擎可视化）</div><div id="chart-gauss" class="chart"></div></div>
+      <div class="card"><div class="panel-title">艺术节奏曲线（当前步高亮）</div><div id="chart-art" class="chart"></div></div>
+    </div>
+  `;
+  const R = appData.meta.distance_scale; const peak = appData.meta.peak_force; const x = [];
+  for (let i = 0; i <= 100; i++) { const r = (i / 100) * 3 * R; const r_norm = r / R; const gauss = r_norm * Math.exp(-r_norm * r_norm); const F = appData.meta.G * 0.5 * 0.5 * 1.0 * peak * gauss; x.push([r.toFixed(2), F.toFixed(3)]); }
+  const ec1 = echarts.init(document.getElementById('chart-gauss'));
+  ec1.setOption({ tooltip: { trigger: 'axis', backgroundColor: '#111827', borderColor: '#2a3a5c', textStyle: { color: '#e2e8f0' } }, grid: { left: 50, right: 30, top: 30, bottom: 50 }, xAxis: { type: 'value', name: '距离 r', nameTextStyle: { color: '#64748b' }, axisLabel: { color: '#64748b' }, splitLine: { lineStyle: { color: '#1a2744' } } }, yAxis: { type: 'value', name: '引力 F', nameTextStyle: { color: '#64748b' }, axisLabel: { color: '#64748b' }, splitLine: { lineStyle: { color: '#1a2744' } } }, series: [{ type: 'line', smooth: true, data: x, lineStyle: { color: '#f59e0b', width: 2.5 }, areaStyle: { color: 'rgba(245,158,11,0.15)' }, markLine: { silent: true, data: [{ xAxis: R.toFixed(2), lineStyle: { color: '#f59e0b', type: 'dashed' }, label: { formatter: 'R = ' + R, color: '#f59e0b' } }] } }] });
+  const art = buildArtData(currentStep); const ec2 = echarts.init(document.getElementById('chart-art'));
+  ec2.setOption({ tooltip: { trigger: 'axis', backgroundColor: '#111827', borderColor: '#2a3a5c', textStyle: { color: '#e2e8f0' } }, legend: { bottom: 0, textStyle: { color: '#94a3b8', fontSize: 10 } }, grid: { left: 50, right: 30, top: 30, bottom: 50 }, xAxis: { type: 'category', data: art.steps, axisLabel: { color: '#64748b' }, splitLine: { lineStyle: { color: '#1a2744' } }, markLine: { silent: true, data: [{ xAxis: currentStep, lineStyle: { color: '#f59e0b', type: 'dashed' }, label: { formatter: 'Step ' + currentStep, color: '#f59e0b' } }] } }, yAxis: { type: 'value', min: 0, max: 1, axisLabel: { color: '#64748b' }, splitLine: { lineStyle: { color: '#1a2744' } } }, series: [{ name: 'dramatic', type: 'line', data: art.dramatic, smooth: true, lineStyle: { color: '#ef4444' }, showSymbol: false }, { name: 'surprise', type: 'line', data: art.surprise, smooth: true, lineStyle: { color: '#a78bfa' }, showSymbol: false }, { name: 'theme', type: 'line', data: art.theme, smooth: true, lineStyle: { color: '#10b981' }, showSymbol: false }] });
+}
+
+function renderCosHeatmap() {
+  const el = document.getElementById('chart-cos-heatmap');
+  if (!el) return;
+  let ec = echarts.getInstanceByDom(el);
+  if (!ec) ec = echarts.init(el);
+  const d = buildCosHeatmapData(currentStep);
+  ec.setOption({
+    tooltip: { position: 'top', backgroundColor: '#111827', borderColor: '#2a3a5c', textStyle: { color: '#e2e8f0' } },
+    grid: { left: 60, right: 20, top: 20, bottom: 60 },
+    xAxis: { type: 'category', data: d.names, axisLabel: { color: '#94a3b8', rotate: 30 } },
+    yAxis: { type: 'category', data: d.names, axisLabel: { color: '#94a3b8' } },
+    visualMap: { min: -1, max: 1, calculable: true, inRange: { color: ['#f87171', '#fbbf24', '#34d399'] }, textStyle: { color: '#94a3b8' } },
+    series: [{ type: 'heatmap', data: d.data, label: { show: true, color: '#fff', formatter: p => p.value[2].toFixed(3) }, emphasis: { itemStyle: { shadowBlur: 10, shadowColor: 'rgba(0,0,0,0.5)' } } }]
+  });
+}
+
+function renderFHeatmap() {
+  const el = document.getElementById('chart-f-heatmap');
+  if (!el) return;
+  let ec = echarts.getInstanceByDom(el);
+  if (!ec) ec = echarts.init(el);
+  const d = buildFHeatmapData(currentStep);
+  ec.setOption({
+    tooltip: { position: 'top', backgroundColor: '#111827', borderColor: '#2a3a5c', textStyle: { color: '#e2e8f0' } },
+    grid: { left: 60, right: 20, top: 20, bottom: 60 },
+    xAxis: { type: 'category', data: d.names, axisLabel: { color: '#94a3b8', rotate: 30 } },
+    yAxis: { type: 'category', data: d.names, axisLabel: { color: '#94a3b8' } },
+    visualMap: { min: -d.maxF, max: d.maxF, calculable: true, inRange: { color: ['#f87171', '#fbbf24', '#34d399'] }, textStyle: { color: '#94a3b8' } },
+    series: [{ type: 'heatmap', data: d.data, label: { show: true, color: '#fff', formatter: p => p.value[2].toFixed(1) }, emphasis: { itemStyle: { shadowBlur: 10, shadowColor: 'rgba(0,0,0,0.5)' } } }]
+  });
+}
+
+function updateTrajectoryCharts(step) {
+  if (!appData || !appData.history || !appData.history.length || step >= appData.history.length) return;
+  const ct = document.getElementById('chart-trajectory');
+  if (ct) {
+    const c = echarts.getInstanceByDom(ct);
+    if (c) {
+      const ids = getCharIds();
+      const seriesUpdates = [];
+      for (let i = 0; i < ids.length; i++) {
+        const name = appData.characters[ids[i]].name;
+        const vec = appData.history[step].snapshot[name];
+        seriesUpdates.push({ name: name + ' 当前', data: [[vec[0], vec[1]]] });
+      }
+      c.setOption({ series: seriesUpdates });
+    }
+  }
+  const cr = document.getElementById('chart-radar');
+  if (cr) {
+    const c = echarts.getInstanceByDom(cr);
+    if (c) c.setOption({ series: [{ data: buildRadarData(step) }] });
+  }
+}
+
+function updateNetworkCharts(step) {
+  if (!appData || !appData.history || !appData.history.length || step >= appData.history.length) return;
+  const cn = document.getElementById('chart-network');
+  if (cn) {
+    const c = echarts.getInstanceByDom(cn);
+    if (c) { const net = buildNetworkData(step); c.setOption({ series: [{ type: 'graph', layout: 'circular', data: net.nodes, links: net.links }] }); }
+  }
+  const cfn = document.getElementById('chart-faction-net');
+  if (cfn) {
+    const c = echarts.getInstanceByDom(cfn);
+    if (c) { const fnet = buildFactionNetworkData(step); c.setOption({ series: [{ type: 'graph', layout: 'circular', data: fnet.nodes, links: fnet.links }] }); }
+  }
+}
+
+function updateFactionCharts(step) {
+  if (!appData || !appData.history || !appData.history.length) return;
+  const cfp = document.getElementById('chart-faction-pull');
+  if (cfp) {
+    const c = echarts.getInstanceByDom(cfp);
+    if (c) c.setOption({ xAxis: { data: getCharNames() }, series: buildFactionPullData(step) }, true);
+  }
+  const cfr = document.getElementById('chart-faction-rise');
+  if (cfr) {
+    const c = echarts.getInstanceByDom(cfr);
+    if (c) {
+      const riseData = buildFactionRiseData(step);
+      c.setOption({ xAxis: { data: appData.history.map(h => h.step) }, series: riseData }, true);
+    }
+  }
+}
+
+function updateEventsCharts(step) {
+  if (!appData || !appData.history || !appData.history.length) return;
+  const ct = document.getElementById('chart-timeline');
+  if (ct) {
+    const c = echarts.getInstanceByDom(ct);
+    if (c) {
+      c.setOption({
+        xAxis: { markLine: { silent: true, data: [{ xAxis: step, lineStyle: { color: '#60a5fa', width: 2 }, label: { formatter: '步' + step, color: '#60a5fa', position: 'insideEndTop' } }] } }
+      });
+    }
+  }
+  const ca = document.getElementById('chart-art');
+  if (ca) {
+    const c = echarts.getInstanceByDom(ca);
+    if (c) {
+      const art = buildArtData(step);
+      c.setOption({ series: [{ name: 'dramatic', data: art.dramatic }, { name: 'surprise', data: art.surprise }, { name: 'theme', data: art.theme }] });
+    }
+  }
+}
+
+function updatePhysicsCharts(step) {
+  if (!appData || !appData.history || !appData.history.length) return;
+  const cg = document.getElementById('chart-gauss'); const ca = document.getElementById('chart-art');
+  if (ca) { const c = echarts.getInstanceByDom(ca); if (c) { const art = buildArtData(step); c.setOption({ xAxis: { markLine: { silent: true, data: [{ xAxis: step, lineStyle: { color: '#f59e0b', type: 'dashed' }, label: { formatter: 'Step ' + step, color: '#f59e0b' } }] } } }); } }
+}
+
+function updateDataCharts(step) {
+  if (!appData || !appData.history || !appData.history.length || step >= appData.history.length) return;
+  const ch = document.getElementById('chart-cos-heatmap');
+  if (ch) {
+    const c = echarts.getInstanceByDom(ch);
+    if (c) {
+      const d = buildCosHeatmapData(step);
+      c.setOption({ xAxis: { data: d.names }, yAxis: { data: d.names }, series: [{ data: d.data }] });
+    }
+  }
+  const fh = document.getElementById('chart-f-heatmap');
+  if (fh) {
+    const c = echarts.getInstanceByDom(fh);
+    if (c) {
+      const d = buildFHeatmapData(step);
+      c.setOption({ xAxis: { data: d.names }, yAxis: { data: d.names }, series: [{ data: d.data }], visualMap: { min: -d.maxF, max: d.maxF } });
+    }
+  }
+  const tbody = document.querySelector('#live-data-table tbody');
+  if (tbody) {
+    const names = getCharNames();
+    const rec = appData.history[step];
+    const rows = tbody.querySelectorAll('tr');
+    names.forEach((name, i) => {
+      if (rows[i]) {
+        const vec = rec.snapshot[name];
+        const eff = rec.eff_vectors[name] || [0,0,0,0];
+        const alive = appData.characters[name].alive ? '存活' : '<span style="color:#ef4444">死亡</span>';
+        rows[i].children[0].innerHTML = '<strong>' + name + '</strong>';
+        rows[i].children[1].innerHTML = alive;
+        for (let j = 0; j < 4; j++) rows[i].children[2 + j].textContent = vec[j].toFixed(3);
+        for (let j = 0; j < 4; j++) rows[i].children[6 + j].textContent = eff[j].toFixed(3);
+      }
+    });
+  }
+}
+
+function exportJSON() {
+  if (!appData || !appData.history) return;
+  const output = { meta_rules: appData.meta, characters: {}, gravity_factors: appData.factors.map(f => ({ name: f.name, mass: f.mass, field_type: f.field_type, field_params: f.field_params, affiliation_weights: f.affiliation_weights })), evolution_history: appData.history, anchor_events: appData.anchor_log, interference_analysis: appData.interference };
+  for (const [name, char] of Object.entries(appData.characters)) output.characters[name] = char.snapshot();
+  const blob = new Blob([JSON.stringify(output, null, 2)], { type: 'application/json' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = 'gravityworld_v32_report.json'; a.click(); URL.revokeObjectURL(url);
+}
+function exportCSV() {
+  if (!appData || !appData.history) return;
+  const lines = ['step,character,dim1,dim2,dim3,dim4,eff1,eff2,eff3,eff4'];
+  for (const rec of appData.history) { for (const [name, vec] of Object.entries(rec.snapshot)) { const eff = rec.eff_vectors[name] || [0,0,0,0]; lines.push(`${rec.step},${name},${vec.join(',')},${eff.join(',')}`); } }
+  const blob = new Blob(['\ufeff' + lines.join('\n')], { type: 'text/csv;charset=utf-8;' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = 'gravityworld_v32_evolution.csv'; a.click(); URL.revokeObjectURL(url);
+}
+
+document.getElementById('fileInput').addEventListener('change', function(e) {
+  const file = e.target.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(ev) {
+    try {
+      const config = JSON.parse(ev.target.result);
+      const { meta, factors, characters, anchors, art_weights } = loadV32Config(config);
+      const faction_manager = new FactionManager(); faction_manager.init_from_factors(factors); faction_manager.assign_members(characters, meta);
+      appData = { meta, factors, characters, anchors, art_weights, faction_manager, data: config, history: [], anchor_log: [] };
+      document.getElementById('sidebarEmpty').style.display = 'none';
+      document.getElementById('sidebarContent').style.display = 'block';
+      document.getElementById('charCheckboxes').innerHTML = Object.keys(characters).map(k => `<div class="checkbox-row"><input type="checkbox" checked id="ch-${k}"><label for="ch-${k}">${characters[k].name}</label></div>`).join('');
+      document.getElementById('factionCheckboxes').innerHTML = Object.keys(faction_manager.factions).map(k => `<div class="checkbox-row"><input type="checkbox" checked id="fa-${k}"><label for="fa-${k}">${k}</label></div>`).join('');
+      const mc = document.getElementById('mainContent');
+      mc.innerHTML = `
+        <div class="stat-bar">
+          <div class="stat-chip"><div class="stat-chip-value" id="stat-steps">0</div><div class="stat-chip-label">推演步数</div></div>
+          <div class="stat-chip"><div class="stat-chip-value" id="stat-chars">${Object.keys(characters).length}</div><div class="stat-chip-label">角色数</div></div>
+          <div class="stat-chip"><div class="stat-chip-value" id="stat-factions">${Object.keys(faction_manager.factions).length}</div><div class="stat-chip-label">势力数</div></div>
+          <div class="stat-chip"><div class="stat-chip-value" id="stat-pairs">0</div><div class="stat-chip-label">关系对</div></div>
+          <div class="stat-chip"><div class="stat-chip-value" id="stat-anchors">${anchors.length}</div><div class="stat-chip-label">锚点事件</div></div>
+          <div class="stat-chip"><div class="stat-chip-value" id="stat-defections">0</div><div class="stat-chip-label">叛变事件</div></div>
+        </div>
+        <div class="main-tabs">
+          <button class="main-tab active" data-tab="data" onclick="switchTab('data')">📋 原始数据</button>
+          <button class="main-tab" data-tab="trajectory" onclick="switchTab('trajectory')">📈 轨迹演化</button>
+          <button class="main-tab" data-tab="network" onclick="switchTab('network')">🕸️ 关系网络</button>
+          <button class="main-tab" data-tab="faction" onclick="switchTab('faction')">🏛️ 势力分析</button>
+          <button class="main-tab" data-tab="events" onclick="switchTab('events')">⚡ 事件时间线</button>
+          <button class="main-tab" data-tab="physics" onclick="switchTab('physics')">🔬 物理引擎</button>
+        </div>
+        <div class="tab-panel active" data-tab="data" id="tab-data"></div>
+        <div class="tab-panel" data-tab="trajectory" id="tab-trajectory"></div>
+        <div class="tab-panel" data-tab="network" id="tab-network"></div>
+        <div class="tab-panel" data-tab="faction" id="tab-faction"></div>
+        <div class="tab-panel" data-tab="events" id="tab-events"></div>
+        <div class="tab-panel" data-tab="physics" id="tab-physics"></div>
+      `;
+      currentTab = 'data'; renderCurrentTab();
+    } catch (err) { alert('解析失败: ' + err.message); }
+  };
+  reader.readAsText(file);
+});
+
+document.addEventListener('change', function(e) {
+  if (!appData) return;
+  const tid = e.target.id;
+  if (!tid) return;
+  if (tid.startsWith('ch-') || tid.startsWith('fa-')) {
+    const activePanel = document.querySelector('.tab-panel.active');
+    if (!activePanel) return;
+    activePanel.innerHTML = '';
+    renderCurrentTab();
+  }
+});
+
+window.addEventListener('resize', () => { document.querySelectorAll('.tab-panel').forEach(p => { p.querySelectorAll('[id^="chart-"]').forEach(div => { const c = echarts.getInstanceByDom(div); if (c) c.resize(); }); }); });
+</script></body>
+</html>

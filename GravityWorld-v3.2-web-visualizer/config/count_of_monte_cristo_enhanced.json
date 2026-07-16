@@ -1,0 +1,299 @@
+{
+  "version": "3.2",
+  "name": "基督山伯爵（增强锚点版）",
+  "description": "基督山伯爵 - 复仇、爱情与救赎的势力博弈。基于原著情节设计强锚点，模拟爱德蒙从被陷害到复仇再到救赎的完整弧线。",
+  "meta_rules": {
+    "G": 0.5,
+    "gamma": 2.0,
+    "dt": 0.01,
+    "dim_weights": [1.0, 1.0, 1.0, 1.0],
+    "distance_power": 2.0,
+    "distance_scale": 1.5,
+    "min_distance": 0.2,
+    "factor_mass_coeff": 5.0,
+    "constants": ["复仇", "宽恕", "命运"]
+  },
+  "gravity_factors": [
+    {
+      "name": "基督山",
+      "mass": 0.95,
+      "field_type": "constant",
+      "field_params": {
+        "vector": [0.9, 0.8, 0.9, 0.9]
+      }
+    },
+    {
+      "name": "巴黎贵族",
+      "mass": 0.9,
+      "field_type": "constant",
+      "field_params": {
+        "vector": [-0.9, -0.7, -0.8, -0.9]
+      }
+    },
+    {
+      "name": "法律司法",
+      "mass": 0.85,
+      "field_type": "constant",
+      "field_params": {
+        "vector": [-0.9, -0.3, -0.5, -0.8]
+      }
+    },
+    {
+      "name": "金钱银行",
+      "mass": 0.8,
+      "field_type": "constant",
+      "field_params": {
+        "vector": [-0.3, 0.8, -0.9, -0.5]
+      }
+    },
+    {
+      "name": "宗教信仰",
+      "mass": 0.75,
+      "field_type": "constant",
+      "field_params": {
+        "vector": [-0.8, -0.8, 0.8, -0.9]
+      }
+    },
+    {
+      "name": "海黛爱情",
+      "mass": 0.7,
+      "field_type": "constant",
+      "field_params": {
+        "vector": [0.8, 0.9, 0.9, 0.7]
+      }
+    },
+    {
+      "name": "死亡命运",
+      "mass": 0.85,
+      "field_type": "constant",
+      "field_params": {
+        "vector": [-0.5, -0.5, -0.9, -0.7]
+      }
+    }
+  ],
+  "characters": [
+    {
+      "name": "爱德蒙",
+      "mass": 1.0,
+      "vector": [0.5, 0.6, 0.4, 0.5],
+      "plasticity": 0.5,
+      "affiliations": {
+        "基督山": 0.9
+      }
+    },
+    {
+      "name": "费尔南",
+      "mass": 0.85,
+      "vector": [-0.6, -0.4, -0.7, -0.6],
+      "plasticity": 0.4,
+      "affiliations": {
+        "巴黎贵族": 0.85,
+        "金钱银行": 0.5
+      }
+    },
+    {
+      "name": "唐格拉尔",
+      "mass": 0.85,
+      "vector": [-0.2, 0.7, -0.8, -0.4],
+      "plasticity": 0.5,
+      "affiliations": {
+        "金钱银行": 0.9
+      }
+    },
+    {
+      "name": "维尔福",
+      "mass": 0.8,
+      "vector": [-0.7, -0.2, -0.4, -0.7],
+      "plasticity": 0.4,
+      "affiliations": {
+        "法律司法": 0.9,
+        "巴黎贵族": 0.6
+      }
+    },
+    {
+      "name": "海黛",
+      "mass": 0.85,
+      "vector": [0.7, 0.8, 0.8, 0.6],
+      "plasticity": 0.6,
+      "affiliations": {
+        "海黛爱情": 0.9
+      }
+    },
+    {
+      "name": "阿尔贝",
+      "mass": 0.75,
+      "vector": [-0.4, -0.2, 0.1, -0.3],
+      "plasticity": 0.6,
+      "affiliations": {
+        "巴黎贵族": 0.7
+      }
+    },
+    {
+      "name": "瓦朗蒂娜",
+      "mass": 0.8,
+      "vector": [0.4, 0.5, 0.6, 0.2],
+      "plasticity": 0.6,
+      "affiliations": {
+        "宗教信仰": 0.6,
+        "海黛爱情": 0.3
+      }
+    }
+  ],
+  "anchors": [
+    {
+      "step": 3,
+      "name": "越狱重生",
+      "anchor_type": "individual",
+      "description": "爱德蒙从伊夫堡越狱，化身复仇天使",
+      "effect": {
+        "character": "爱德蒙",
+        "vector_delta": [0.3, 0.2, 0.2, 0.2]
+      }
+    },
+    {
+      "step": 8,
+      "name": "发现宝藏",
+      "anchor_type": "individual",
+      "description": "发现基督山宝藏，获得复仇资本，开始向基督山伯爵转变",
+      "effect": {
+        "character": "爱德蒙",
+        "vector_delta": [0.2, 0.1, 0.3, 0.2]
+      }
+    },
+    {
+      "step": 10,
+      "name": "重返巴黎",
+      "anchor_type": "individual",
+      "description": "以基督山伯爵身份进入巴黎上流社会",
+      "effect": {
+        "character": "爱德蒙",
+        "vector_delta": [0.15, 0.1, 0.2, 0.15]
+      }
+    },
+    {
+      "step": 12,
+      "name": "费尔南丑闻曝光",
+      "anchor_type": "individual",
+      "description": "爱德蒙揭露费尔南叛国与谋杀罪行，费尔南身败名裂",
+      "effect": {
+        "character": "爱德蒙",
+        "vector_delta": [0.1, 0.0, 0.15, 0.1]
+      }
+    },
+    {
+      "step": 13,
+      "name": "费尔南崩溃",
+      "anchor_type": "individual",
+      "description": "丑闻曝光后费尔南精神崩溃，社会地位崩塌",
+      "effect": {
+        "character": "费尔南",
+        "vector_delta": [-0.3, -0.2, -0.3, -0.2]
+      }
+    },
+    {
+      "step": 15,
+      "name": "唐格拉尔破产",
+      "anchor_type": "individual",
+      "description": "爱德蒙操控金融市场，唐格拉尔银行破产，财富帝国崩塌",
+      "effect": {
+        "character": "唐格拉尔",
+        "vector_delta": [-0.2, -0.2, -0.3, -0.1]
+      }
+    },
+    {
+      "step": 17,
+      "name": "维尔福私生子真相",
+      "anchor_type": "individual",
+      "description": "维尔福的私生子贝尼迪托在法庭上揭露身世，法律权威崩塌",
+      "effect": {
+        "character": "维尔福",
+        "vector_delta": [-0.25, -0.1, -0.3, -0.2]
+      }
+    },
+    {
+      "step": 18,
+      "name": "维尔福疯癫",
+      "anchor_type": "individual",
+      "description": "妻子自杀、儿子被杀、私生子罪犯——维尔福彻底疯癫",
+      "effect": {
+        "character": "维尔福",
+        "vector_delta": [-0.2, -0.1, -0.3, -0.2]
+      }
+    },
+    {
+      "step": 20,
+      "name": "海黛的告白",
+      "anchor_type": "relation",
+      "description": "海黛向爱德蒙表白爱意，唤醒他内心的善良",
+      "effect": {
+        "character": "爱德蒙",
+        "vector_delta": [0.0, 0.2, 0.3, -0.2]
+      }
+    },
+    {
+      "step": 22,
+      "name": "海黛敞开心扉",
+      "anchor_type": "relation",
+      "description": "海黛讲述自己的悲惨身世，与爱德蒙产生深层共鸣",
+      "effect": {
+        "character": "海黛",
+        "vector_delta": [0.1, 0.1, 0.15, 0.05]
+      }
+    },
+    {
+      "step": 25,
+      "name": "宽恕唐格拉尔",
+      "anchor_type": "individual",
+      "description": "爱德蒙在唐格拉尔濒临饿死时宽恕了他，放弃最后的复仇",
+      "effect": {
+        "character": "爱德蒙",
+        "vector_delta": [0.15, 0.1, 0.2, -0.3]
+      }
+    },
+    {
+      "step": 30,
+      "name": "阿尔贝决斗邀约",
+      "anchor_type": "individual",
+      "description": "阿尔贝（费尔南之子）向基督山伯爵发起决斗挑战",
+      "effect": {
+        "character": "阿尔贝",
+        "vector_delta": [-0.15, -0.1, -0.1, -0.1]
+      }
+    },
+    {
+      "step": 32,
+      "name": "瓦朗蒂娜中毒",
+      "anchor_type": "individual",
+      "description": "维尔福夫人毒杀瓦朗蒂娜未遂，瓦朗蒂娜假死",
+      "effect": {
+        "character": "瓦朗蒂娜",
+        "vector_delta": [0.0, 0.0, -0.1, -0.1]
+      }
+    },
+    {
+      "step": 38,
+      "name": "海黛的吻",
+      "anchor_type": "relation",
+      "description": "海黛以深情之吻彻底融化爱德蒙心中的仇恨坚冰",
+      "effect": {
+        "character": "爱德蒙",
+        "vector_delta": [0.1, 0.15, 0.2, -0.2]
+      }
+    },
+    {
+      "step": 42,
+      "name": "扬帆远航",
+      "anchor_type": "individual",
+      "description": "爱德蒙与海黛乘船离开法国，开始新生活，彻底告别复仇",
+      "effect": {
+        "character": "爱德蒙",
+        "vector_delta": [0.1, 0.1, 0.2, -0.1]
+      }
+    }
+  ],
+  "art_weights": {
+    "dramatic": 0.6,
+    "surprise": 0.5,
+    "theme": 0.7
+  }
+}

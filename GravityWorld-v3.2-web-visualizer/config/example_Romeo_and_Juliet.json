@@ -1,0 +1,142 @@
+{
+  "version": "3.2",
+  "name": "罗密欧与朱丽叶",
+  "description": "维罗纳的家族世仇：蒙太古与凯普莱特。罗密欧与朱丽叶的爱情在家族对立中挣扎。",
+  "meta_rules": {
+    "G": 1.0,
+    "gamma": 2.0,
+    "dt": 0.01,
+    "dim_weights": [1.0, 1.0, 1.0, 1.0],
+    "distance_power": 2.0,
+    "min_distance": 0.1,
+    "factor_mass_coeff": 5.0,
+    "constants": ["爱情", "家族世仇", "命运"]
+  },
+  "gravity_factors": [
+    {
+      "name": "凯普莱特",
+      "mass": 0.9,
+      "field_type": "constant",
+      "field_params": {
+        "vector": [-0.4, 0.5, -0.3, 0.6]
+      }
+    },
+    {
+      "name": "蒙太古",
+      "mass": 0.85,
+      "field_type": "constant",
+      "field_params": {
+        "vector": [0.5, -0.4, -0.2, -0.5]
+      }
+    }
+  ],
+  "characters": [
+    {
+      "name": "罗密欧",
+      "mass": 0.9,
+      "vector": [0.4, -0.2, 0.5, -0.3],
+      "plasticity": 0.5,
+      "affiliations": {
+        "蒙太古": 0.8,
+        "凯普莱特": 0.1
+      }
+    },
+    {
+      "name": "朱丽叶",
+      "mass": 0.85,
+      "vector": [-0.3, 0.3, 0.5, 0.2],
+      "plasticity": 0.5,
+      "affiliations": {
+        "凯普莱特": 0.75,
+        "蒙太古": 0.1
+      }
+    },
+    {
+      "name": "乳媪",
+      "mass": 0.75,
+      "vector": [-0.2, 0.3, -0.1, 0.4],
+      "plasticity": 0.4,
+      "affiliations": {
+        "凯普莱特": 0.7,
+        "蒙太古": 0.0
+      }
+    },
+    {
+      "name": "茂丘西奥",
+      "mass": 0.8,
+      "vector": [0.5, -0.4, 0.2, -0.4],
+      "plasticity": 0.6,
+      "affiliations": {
+        "蒙太古": 0.7,
+        "凯普莱特": 0.0
+      }
+    },
+    {
+      "name": "提伯尔特",
+      "mass": 0.75,
+      "vector": [-0.5, 0.4, -0.3, 0.6],
+      "plasticity": 0.3,
+      "affiliations": {
+        "凯普莱特": 0.9,
+        "蒙太古": -0.3
+      }
+    }
+  ],
+  "anchors": [
+    {
+      "step": 10,
+      "name": "舞会相遇",
+      "anchor_type": "relation",
+      "description": "罗密欧与朱丽叶在凯普莱特家舞会上一见钟情",
+      "effect": {
+        "character": "罗密欧",
+        "vector_delta": [0.4, 0.3, 0.5, 0.2]
+      }
+    },
+    {
+      "step": 15,
+      "name": "阳台誓言",
+      "anchor_type": "relation",
+      "description": "罗密欧与朱丽叶在阳台互诉衷肠，私定终身",
+      "effect": {
+        "character": "朱丽叶",
+        "vector_delta": [0.3, 0.4, 0.6, 0.2]
+      }
+    },
+    {
+      "step": 20,
+      "name": "茂丘西奥之死",
+      "anchor_type": "individual",
+      "description": "提伯尔特杀死茂丘西奥，激化冲突",
+      "effect": {
+        "character": "提伯尔特",
+        "vector_delta": [0.0, 0.1, 0.2, 0.0]
+      }
+    },
+    {
+      "step": 22,
+      "name": "提伯尔特之死",
+      "anchor_type": "individual",
+      "description": "罗密欧为复仇杀死提伯尔特，遭放逐",
+      "effect": {
+        "character": "罗密欧",
+        "vector_delta": [-0.2, -0.1, 0.1, -0.3]
+      }
+    },
+    {
+      "step": 25,
+      "name": "朱丽叶假死",
+      "anchor_type": "individual",
+      "description": "朱丽叶服下神父药水假死",
+      "effect": {
+        "character": "朱丽叶",
+        "vector_delta": [0.0, 0.0, 0.1, -0.2]
+      }
+    }
+  ],
+  "art_weights": {
+    "dramatic": 0.7,
+    "surprise": 0.4,
+    "theme": 0.8
+  }
+}

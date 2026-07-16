@@ -1,0 +1,92 @@
+{
+  "version": "3.2",
+  "name": "Romeo_and_Juliet_no_anchors",
+  "description": "罗密欧与朱丽叶 - 纯势力场与角色相互作用（无预设锚点）",
+  "meta_rules": {
+    "G": 0.5,
+    "gamma": 2.0,
+    "dt": 0.01,
+    "dim_weights": [1.0, 1.0, 1.0, 1.0],
+    "distance_power": 2.0,
+    "distance_scale": 1.5,
+    "min_distance": 0.2,
+    "factor_mass_coeff": 5.0,
+    "constants": ["爱情", "家族世仇", "命运"]
+  },
+  "gravity_factors": [
+    {
+      "name": "凯普莱特",
+      "mass": 0.9,
+      "field_type": "constant",
+      "field_params": {
+        "vector": [-0.8, 0.7, -0.5, 0.9]
+      }
+    },
+    {
+      "name": "蒙太古",
+      "mass": 0.85,
+      "field_type": "constant",
+      "field_params": {
+        "vector": [0.8, -0.7, -0.5, -0.9]
+      }
+    }
+  ],
+  "characters": [
+    {
+      "name": "罗密欧",
+      "mass": 1.0,
+      "vector": [0.6, -0.4, 0.8, -0.5],
+      "plasticity": 0.5,
+      "affiliations": {
+        "蒙太古": 0.9,
+        "凯普莱特": 0.0
+      }
+    },
+    {
+      "name": "朱丽叶",
+      "mass": 0.95,
+      "vector": [-0.5, 0.5, 0.8, 0.3],
+      "plasticity": 0.5,
+      "affiliations": {
+        "凯普莱特": 0.85,
+        "蒙太古": 0.0
+      }
+    },
+    {
+      "name": "乳媪",
+      "mass": 0.85,
+      "vector": [-0.3, 0.5, -0.2, 0.6],
+      "plasticity": 0.5,
+      "affiliations": {
+        "凯普莱特": 0.75,
+        "蒙太古": 0.0
+      }
+    },
+    {
+      "name": "茂丘西奥",
+      "mass": 0.85,
+      "vector": [0.8, -0.7, 0.3, -0.7],
+      "plasticity": 0.5,
+      "affiliations": {
+        "蒙太古": 0.8,
+        "凯普莱特": 0.0
+      }
+    },
+    {
+      "name": "提伯尔特",
+      "mass": 0.8,
+      "vector": [-0.8, 0.7, -0.6, 0.95],
+      "plasticity": 0.5,
+      "affiliations": {
+        "凯普莱特": 0.95,
+        "蒙太古": 0.0
+      }
+    }
+  ],
+  "anchors": [],
+  "art_weights": {
+    "dramatic": 0.5,
+    "surprise": 0.5,
+    "theme": 0.5
+  }
+}

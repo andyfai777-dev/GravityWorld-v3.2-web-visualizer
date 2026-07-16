@@ -1,0 +1,92 @@
+{
+  "version": "3.2",
+  "name": "Romeo_and_Juliet_top_entities",
+  "description": "罗密欧与朱丽叶 - 数值基于人类尺度绝对值，非故事相对值",
+  "meta_rules": {
+    "G": 0.5,
+    "gamma": 2.0,
+    "dt": 0.01,
+    "dim_weights": [1.0, 1.0, 1.0, 1.0],
+    "distance_power": 2.0,
+    "min_distance": 0.1,
+    "distance_scale": 1.5,
+    "factor_mass_coeff": 5.0,
+    "constants": ["爱情", "家族世仇", "命运"]
+  },
+  "gravity_factors": [
+    {
+      "name": "凯普莱特",
+      "mass": 0.9,
+      "field_type": "constant",
+      "field_params": {
+        "vector": [-0.4, 0.5, -0.3, 0.6]
+      }
+    },
+    {
+      "name": "蒙太古",
+      "mass": 0.85,
+      "field_type": "constant",
+      "field_params": {
+        "vector": [0.5, -0.4, -0.2, -0.5]
+      }
+    }
+  ],
+  "characters": [
+    {
+      "name": "罗密欧",
+      "mass": 0.9,
+      "vector": [0.4, -0.2, 0.5, -0.3],
+      "plasticity": 0.5,
+      "affiliations": {
+        "蒙太古": 0.8,
+        "凯普莱特": 0.1
+      }
+    },
+    {
+      "name": "朱丽叶",
+      "mass": 0.85,
+      "vector": [-0.3, 0.3, 0.5, 0.2],
+      "plasticity": 0.5,
+      "affiliations": {
+        "凯普莱特": 0.75,
+        "蒙太古": 0.1
+      }
+    },
+    {
+      "name": "乳媪",
+      "mass": 0.75,
+      "vector": [-0.2, 0.3, -0.1, 0.4],
+      "plasticity": 0.4,
+      "affiliations": {
+        "凯普莱特": 0.7,
+        "蒙太古": 0.0
+      }
+    },
+    {
+      "name": "茂丘西奥",
+      "mass": 0.8,
+      "vector": [0.5, -0.4, 0.2, -0.4],
+      "plasticity": 0.6,
+      "affiliations": {
+        "蒙太古": 0.7,
+        "凯普莱特": 0.0
+      }
+    },
+    {
+      "name": "提伯尔特",
+      "mass": 0.75,
+      "vector": [-0.5, 0.4, -0.3, 0.6],
+      "plasticity": 0.3,
+      "affiliations": {
+        "凯普莱特": 0.9,
+        "蒙太古": -0.3
+      }
+    }
+  ],
+  "anchors": [],
+  "art_weights": {
+    "dramatic": 0.5,
+    "surprise": 0.5,
+    "theme": 0.5
+  }
+}
