@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -118,7 +118,7 @@
         <button class="run-btn" id="runBtn" onclick="runEvolution()">▶运行推演</button>
       </div>
       <div class="sidebar-section">
-        <span class="sidebar-label">角色筛选</span>      <div id="charCheckboxes"></div>
+        <span class="sidebar-label">角色筛选</span><div id="charCheckboxes"></div>
       </div>
       <div class="sidebar-section">
         <span class="sidebar-label">势力显示</span>
@@ -126,7 +126,7 @@
       </div>
       <div class="sidebar-section">
         <span class="sidebar-label">数据层</span>
-     <div class="checkbox-row"><input type="checkbox" id="showRaw" checked><label for="showRaw">原始向量</label></div>
+<div class="checkbox-row"><input type="checkbox" id="showRaw" checked><label for="showRaw">原始向量</label></div>
         <div class="checkbox-row"><input type="checkbox" id="showEff" checked><label for="showEff">有效向量</label></div>
         <div class="checkbox-row"><input type="checkbox" id="showAff" checked><label for="showAff">附着向量</label></div>
         <div class="checkbox-row"><input type="checkbox" id="showPull" checked><label for="showPull">势力牵引</label></div>
@@ -137,19 +137,13 @@
   <div class="content" id="mainContent">
     <div class="empty-state">
       <h2>未加载数据</h2>
-      <p>点击右上角「加载配置 JSON」选择 v3.2 配置文件</p>
+  <p>点击右上角「加载配置 JSON」选择 v3.2 配置文件</p>
       <p style="margin-top:6px;font-size:11px;">支持: config/example_v32.json / romeo_juliet_v32.json</p>
     </div>
   </div>
 </div>
 
 <script>
-// GravityWorld v3.2 Web Visualizer
-// Copyright (c) 2025 GravityWorld Authors
-// Licensed under the MIT License
-// https://github.com/yourusername/gravityworld-v3.2-web
-
-const V = {
 
 const V = {
   zeros(n) { return Array(n).fill(0); },
@@ -455,8 +449,6 @@ function buildFactionPullData(step) {
     return { name: facName, type: 'bar', stack: 'total', data, itemStyle: { color: FAC_COLORS[fi % FAC_COLORS.length] } };
   });
 }
-
-
 
 function buildFactionRiseData(step) {
   if (!appData || !appData.history || !appData.history.length) return [];
@@ -783,8 +775,6 @@ function updateFactionCharts(step) {
     }
   }
 }
-
-
 
 function updateEventsCharts(step) {
   if (!appData || !appData.history || !appData.history.length) return;
